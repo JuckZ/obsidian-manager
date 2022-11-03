@@ -46,7 +46,7 @@ esbuild
 		sourcemap: prod ? false : "inline",
 		treeShaking: true,
 		// outfile: 'main.js',
-		outdir: "dest",
+		outdir: dir,
 		plugins: [sassPlugin()],
 	})
 	.catch(() => process.exit(1));
