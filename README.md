@@ -1,4 +1,4 @@
-# Obsidian Sample Plugin
+# Obsidian Manager Plugin
 
 A Toolkit try to solve all the trivial problems most people usually encountered in obsidian.
 
