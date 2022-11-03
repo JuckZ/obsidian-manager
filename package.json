@@ -1,12 +1,17 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
+	"name": "obsidian-manager",
+	"version": "0.0.4",
 	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"release": "standard-version",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
+	},
+	"standard-version": {
+		"t": "",
+		"releaseCommitMessageFormat": "Obsidian Manager Release: v{{currentTag}}"
 	},
 	"keywords": [
 		"Obsidian-plugin",
@@ -19,12 +24,15 @@
 		"@typescript-eslint/eslint-plugin": "5.29.0",
 		"@typescript-eslint/parser": "5.29.0",
 		"builtin-modules": "3.3.0",
+		"dotenv": "^16.0.3",
 		"esbuild": "0.14.47",
+		"esbuild-sass-plugin": "^2.4.0",
 		"obsidian": "latest",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"obsidian-daily-notes-interface": "^0.9.4"
+		"obsidian-daily-notes-interface": "^0.9.4",
+		"standard-version": "^9.5.0"
 	}
 }
