@@ -15,6 +15,12 @@ This sample plugin demonstrates some of the basic functionality the plugin API c
 - Registers a global click event and output 'click' to the console.
 - Registers a global interval which logs 'setInterval' to the console.
 
+## TODO
+
+- [ ] demo.gif
+- [ ] notify
+
+
 ## First time developing plugins?
 
 Quick starting guide for new plugin devs:
