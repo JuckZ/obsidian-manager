@@ -12,6 +12,7 @@ A Toolkit try to solve all the trivial problems most people usually encountered 
 - [ ] better spaced repetition
 - [ ] random background (speed up) [Coming soon~]
 - [ ] better notification (mobile and desktop)
+  - [x] [ntfy](https://ntfy.sh/docs/) support [beta], with it you can get notification on every platform.
 - [ ] Function switch
 - [ ] better Journal
   - [x] todo list rollover added the option of automatic synchronization
