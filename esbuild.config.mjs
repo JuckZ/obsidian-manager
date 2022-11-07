@@ -14,14 +14,18 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === "production";
 
-const dir = prod ? "./" : process.env.OUTDIR;
+const dir = prod ? process.env.OUTDIR || "./" : "./";
 
 esbuild
 	.build({
 		banner: {
 			js: banner,
 		},
-		entryPoints: ["src/main.ts", "src/styles.css"],
+		entryPoints: [
+			"src/main.ts",
+			// "src/manifest.json",
+			"src/styles.css",
+		],
 		bundle: true,
 		external: [
 			"obsidian",
@@ -45,7 +49,6 @@ esbuild
 		logLevel: "info",
 		sourcemap: prod ? false : "inline",
 		treeShaking: true,
-		// outfile: 'main.js',
 		outdir: dir,
 		plugins: [sassPlugin()],
 	})

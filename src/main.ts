@@ -1,4 +1,4 @@
-import { Notice, Plugin, Setting, PluginSettingTab, TAbstractFile, TFile } from "obsidian";
+import { App, Notice, Plugin, PluginManifest, Setting, PluginSettingTab, TAbstractFile, TFile } from "obsidian";
 import axios from "axios";
 import {
 	getDailyNoteSettings,
@@ -9,6 +9,8 @@ import { RemindersController } from "controller";
 import { PluginDataIO } from "data";
 import { Reminder, Reminders } from "model/reminder";
 import { ReminderSettingTab, SETTINGS } from "settings";
+import { DATE_TIME_FORMATTER } from "model/time";
+import type { ReadOnlyReference } from "model/ref";
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -47,6 +49,20 @@ export default class ObsidianManagerPlugin extends Plugin {
 	private remindersController: RemindersController;
 	private settings: any;
   private reminders: Reminders;
+
+	constructor(app: App, manifest: PluginManifest) {
+    super(app, manifest);
+    this.reminders = new Reminders(() => {
+      this.pluginDataIO.changed = true;
+    });
+    this.pluginDataIO = new PluginDataIO(this, this.reminders);
+    this.reminders.reminderTime = SETTINGS.reminderTime;
+    DATE_TIME_FORMATTER.setTimeFormat(SETTINGS.dateFormat, SETTINGS.dateTimeFormat, SETTINGS.strictDateFormat);
+    this.remindersController = new RemindersController(
+      app.vault,
+      this.reminders
+    );
+  }
 
 	async loadSettings() {
 		const DEFAULT_SETTINGS = {
@@ -135,16 +151,12 @@ export default class ObsidianManagerPlugin extends Plugin {
 	}
 
 	async sayHello() {
-    this.remindersController.reloadAllFiles().then(() => {
-      this.pluginDataIO.scanned.value = true;
-      this.pluginDataIO.save();
-    })
-
+    await this.remindersController.reloadAllFiles()
+		this.pluginDataIO.scanned.value = true;
+		this.pluginDataIO.save();
     const expired = this.reminders.getExpiredReminders(
       SETTINGS.reminderTime.value
     );
-
-		console.log(expired)
   }
 
 	async rollover(file:TFile|undefined) {
