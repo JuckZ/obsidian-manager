@@ -11136,6 +11136,7 @@ var ObsidianManagerPlugin = class extends import_obsidian3.Plugin {
       this.pluginDataIO.save();
     });
     const expired = this.reminders.getExpiredReminders(SETTINGS.reminderTime.value);
+    console.log(expired);
   }
   async rollover(file) {
     const { folder = "", format } = (0, import_obsidian_daily_notes_interface.getDailyNoteSettings)();
@@ -11262,6 +11263,7 @@ ${todos_today.join("\n")}`;
       id: "obsidian-manager-sayHello",
       name: "Say Hello",
       callback: () => {
+        this.sayHello();
         axios_default2.post("https://ntfy.ihave.cool/test", "Look ma, with auth", {
           headers: {
             Authorization: "Basic xxx"

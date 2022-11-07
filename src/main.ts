@@ -143,6 +143,8 @@ export default class ObsidianManagerPlugin extends Plugin {
     const expired = this.reminders.getExpiredReminders(
       SETTINGS.reminderTime.value
     );
+
+		console.log(expired)
   }
 
 	async rollover(file:TFile|undefined) {
@@ -349,6 +351,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 			id: "obsidian-manager-sayHello",
 			name: "Say Hello",
 			callback: () => {
+				this.sayHello()
 				// TODO 读取配置，防止泄露密码
 				axios
 					.post(
