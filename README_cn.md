@@ -4,7 +4,7 @@
 
 ## 开始
 
-[中文文档](./README_cn.md)
+[English Doc](./README.md)
 
 ## 为什么选择 Obsidian Manager
 

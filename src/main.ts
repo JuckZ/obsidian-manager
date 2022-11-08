@@ -64,33 +64,12 @@ export default class ObsidianManagerPlugin extends Plugin {
     );
   }
 
-	async getTemplateHeadings() {
-    const { template } = getDailyNoteSettings()
-    if (!template) return [];
-
-    let file = this.app.vault.getAbstractFileByPath(template)
-    if (file == null) {
-      file = this.app.vault.getAbstractFileByPath(template + '.md')
-    }
-    /* @ts-ignore */
-    const templateContents = await this.app.vault.read(file)
-    const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(([heading]) => heading)
-    return allHeadings;
-  }
-
 	async loadSettings() {
-		const templateHeadingsValue = await this.getTemplateHeadings();
 		const DEFAULT_SETTINGS = {
 			templateHeading: "none",
 			deleteOnComplete: false,
-			removeEmptyTodos: false,
-			templateHeadingOptions: templateHeadingsValue.reduce((acc, heading) => {
-				/* @ts-ignore */
-				acc[heading] = heading;
-				return acc;
-			}, {})
+			removeEmptyTodos: false
 		};
-		console.warn(DEFAULT_SETTINGS)
 		this.settings = Object.assign(
 			{},
 			DEFAULT_SETTINGS,
