@@ -45,13 +45,13 @@
 ### Windows(cmd.exe)
 
 ```cmd
-set "OUTDIR=path_to_this_plugin_in_your_obsidian_vault" && npm start
+set "OUTDIR=path_to_this_plugin_in_your_obsidian_vault" && npm run build
 ```
 
 ### Windows(Powershell)
 
 ```powershell
-($env:OUTDIR = "path_to_this_plugin_in_your_obsidian_vault") -and (npm start)
+($env:OUTDIR = "path_to_this_plugin_in_your_obsidian_vault") -and (npm run build)
 ```
 
 eg.

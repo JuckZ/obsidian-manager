@@ -2,7 +2,7 @@ import { changeReminderFormat, kanbanPluginReminderFormat, ReminderFormatType, R
 import { ReminderFormatConfig, ReminderFormatParameterKey } from "model/format/reminder-base";
 import { LatersSerde, RawSerde, ReminderFormatTypeSerde, SettingModel, SettingTabModel, TimeSerde } from "model/settings";
 import { DateTime, Later, Time } from "model/time";
-import { App, PluginSettingTab, Plugin_2 } from "obsidian";
+import { App, PluginSettingTab, Plugin_2, Setting } from "obsidian";
 
 export const TAG_RESCAN = "re-scan";
 
@@ -23,6 +23,7 @@ class Settings {
   linkDatesToDailyNotes: SettingModel<boolean, boolean>;
   editDetectionSec: SettingModel<number, number>;
   reminderCheckIntervalSec: SettingModel<number, number>;
+  templateHeadings: SettingModel<string, string>;
 
   constructor() {
     const reminderFormatSettings = new ReminderFormatSettings(this.settings);
@@ -147,6 +148,12 @@ class Settings {
       .desc("Interval(in seconds) to periodically check whether or not you should be notified of reminders.  You will need to restart Obsidian for this setting to take effect.")
       .number(5)
       .build(new RawSerde());
+
+    const templateHeadings = this.settings.newSettingBuilder()
+      .key("templateHeadings")
+      .name("Template heading")
+      .desc("Which heading from your template should the todos go under")
+      .dropdown('');
 
     this.settings
       .newGroup("Notification Settings")
