@@ -45,25 +45,25 @@
 ### Windows(cmd.exe)
 
 ```cmd
-set "OUTDIR=path_to_this_plugin_in_your_obsidian_vault" && npm run build
+set "OUTDIR=path_to_this_plugin_in_your_obsidian_vault" && npm run dev
 ```
 
 ### Windows(Powershell)
 
 ```powershell
-($env:OUTDIR = "path_to_this_plugin_in_your_obsidian_vault") -and (npm run build)
+($env:OUTDIR = "path_to_this_plugin_in_your_obsidian_vault") -and (npm run dev)
 ```
 
 eg.
 
 ```powershell
-($env:OUTDIR="../juckz.github.io/blogs/.obsidian/plugins/obsidian-manager") -and (npm run build)
+($env:OUTDIR="../juckz.github.io/blogs/.obsidian/plugins/obsidian-manager") -and (npm run dev)
 ```
 
 ### Linux, macOS(Bash)
 
 ```bash
-OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm start
+OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm run dev
 ```
 
 ## 参考

@@ -1,4 +1,13 @@
-import { App, Notice, Plugin, PluginManifest, Setting, PluginSettingTab, TAbstractFile, TFile } from "obsidian";
+import {
+	App,
+	Notice,
+	Plugin,
+	PluginManifest,
+	Setting,
+	PluginSettingTab,
+	TAbstractFile,
+	TFile,
+} from "obsidian";
 import axios from "axios";
 import {
 	getDailyNoteSettings,
@@ -11,6 +20,7 @@ import { Reminder, Reminders } from "model/reminder";
 import { ReminderSettingTab, SETTINGS } from "settings";
 import { DATE_TIME_FORMATTER } from "model/time";
 import type { ReadOnlyReference } from "model/ref";
+import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -43,37 +53,28 @@ function createRepresentationFromHeadings(headings) {
 */
 
 export default class ObsidianManagerPlugin extends Plugin {
-  pluginDataIO: PluginDataIO;
-  undoHistory: any[];
-  undoHistoryTime: any;
+	pluginDataIO: PluginDataIO;
+	private undoHistory: any[];
+	private undoHistoryTime: Date;
 	private remindersController: RemindersController;
 	private settings: any;
-  private reminders: Reminders;
+	private reminders: Reminders;
 
 	constructor(app: App, manifest: PluginManifest) {
-    super(app, manifest);
-    this.reminders = new Reminders(() => {
-      this.pluginDataIO.changed = true;
-    });
-    this.pluginDataIO = new PluginDataIO(this, this.reminders);
-    this.reminders.reminderTime = SETTINGS.reminderTime;
-    DATE_TIME_FORMATTER.setTimeFormat(SETTINGS.dateFormat, SETTINGS.dateTimeFormat, SETTINGS.strictDateFormat);
-    this.remindersController = new RemindersController(
-      app.vault,
-      this.reminders
-    );
-  }
-
-	async loadSettings() {
-		const DEFAULT_SETTINGS = {
-			templateHeading: "none",
-			deleteOnComplete: false,
-			removeEmptyTodos: false
-		};
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
+		super(app, manifest);
+		this.reminders = new Reminders(() => {
+			this.pluginDataIO.changed = true;
+		});
+		this.pluginDataIO = new PluginDataIO(this, this.reminders);
+		this.reminders.reminderTime = SETTINGS.reminderTime;
+		DATE_TIME_FORMATTER.setTimeFormat(
+			SETTINGS.dateFormat,
+			SETTINGS.dateTimeFormat,
+			SETTINGS.strictDateFormat
+		);
+		this.remindersController = new RemindersController(
+			app.vault,
+			this.reminders
 		);
 	}
 
@@ -82,24 +83,20 @@ export default class ObsidianManagerPlugin extends Plugin {
 	}
 
 	isDailyNotesEnabled() {
-		
-		const dailyNotesPlugin =
 		/* @ts-ignore */
-			this.app.internalPlugins.plugins["daily-notes"];
+		const dailyNotesPlugin = this.app.internalPlugins.plugins["daily-notes"];
 		const dailyNotesEnabled = dailyNotesPlugin && dailyNotesPlugin.enabled;
-
-		const periodicNotesPlugin =
 		/* @ts-ignore */
-			this.app.plugins.getPlugin("periodic-notes");
+		const periodicNotesPlugin = this.app.plugins.getPlugin("periodic-notes");
 		const periodicNotesEnabled =
 			periodicNotesPlugin && periodicNotesPlugin.settings?.daily?.enabled;
 
 		return dailyNotesEnabled || periodicNotesEnabled;
 	}
 
-	getLastDailyNote():TFile {
+	getLastDailyNote(): TFile {
 		const { moment } = window;
-		const { folder = '', format } = getDailyNoteSettings();
+		const { folder = "", format } = getDailyNoteSettings();
 
 		// get all notes in directory that aren't null
 		const dailyNoteFiles = this.app.vault
@@ -151,17 +148,17 @@ export default class ObsidianManagerPlugin extends Plugin {
 	}
 
 	async sayHello() {
-    await this.remindersController.reloadAllFiles()
+		await this.remindersController.reloadAllFiles();
 		this.pluginDataIO.scanned.value = true;
 		this.pluginDataIO.save();
-    const expired = this.reminders.getExpiredReminders(
-      SETTINGS.reminderTime.value
-    );
-  }
+		const expired = this.reminders.getExpiredReminders(
+			SETTINGS.reminderTime.value
+		);
+	}
 
-	async rollover(file:TFile|undefined) {
+	async rollover(file: TFile | undefined) {
 		/*** First we check if the file created is actually a valid daily note ***/
-		const { folder = '', format } = getDailyNoteSettings();
+		const { folder = "", format } = getDailyNoteSettings();
 		let ignoreCreationTime = false;
 
 		// Rollover can be called, but we need to get the daily file
@@ -347,25 +344,24 @@ export default class ObsidianManagerPlugin extends Plugin {
 		}
 	}
 
-	async onload() {
-		await this.loadSettings();
-		this.undoHistory = [];
-		this.undoHistoryTime = new Date();
+	override async onload() {
+		this.setupUI();
+		this.setupCommands();
+		this.app.workspace.onLayoutReady(async () => {
+			await this.pluginDataIO.load();
+			if (this.pluginDataIO.debug.value) {
+				monkeyPatchConsole(this);
+		}
+			this.watchVault();
+		})
+	}
 
-		this.addSettingTab(new ReminderSettingTab(this.app, this))
-
-		this.registerEvent(
-			this.app.vault.on("create", async (file) => {
-				/* @ts-ignore */
-				this.rollover(file);
-			})
-		);
-
+	private setupCommands() {
 		this.addCommand({
 			id: "obsidian-manager-sayHello",
 			name: "Say Hello",
 			callback: () => {
-				this.sayHello()
+				this.sayHello();
 				// TODO 读取配置，防止泄露密码
 				axios
 					.post(
@@ -409,4 +405,39 @@ export default class ObsidianManagerPlugin extends Plugin {
 			},
 		});
 	}
+
+	private setupUI() {
+		this.addSettingTab(new ReminderSettingTab(this.app, this));
+		this.addRibbonIcon('dice', 'Sample Plugin', () => {
+			new Notice('This is a notice!');
+		});
+		
+	}
+
+	private watchVault() {
+		[
+				this.app.vault.on('create', async (file) => {
+					/* @ts-ignore */
+					this.rollover(file);
+				}),
+				this.app.vault.on('modify', async (file) => {
+						this.remindersController.reloadFile(file, true);
+				}),
+				this.app.vault.on('delete', (file) => {
+					/* @ts-ignore */
+						this.remindersController.removeFile(file.path);
+				}),
+				this.app.vault.on('rename', async (file, oldPath) => {
+						// We only reload the file if it CAN be deleted, otherwise this can
+						// cause crashes.
+						/* @ts-ignore */
+						if (await this.remindersController.removeFile(oldPath)) {
+								// We need to do the reload synchronously so as to avoid racing.
+								await this.remindersController.reloadFile(file);
+						}
+				}),
+		].forEach((eventRef) => {
+				this.registerEvent(eventRef);
+		});
+}
 }

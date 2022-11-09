@@ -11,7 +11,8 @@ class Settings {
 
   settings: SettingTabModel = new SettingTabModel();
 
-  setRolloverTemplateHeadingSelectorHasBeenSet: boolean;
+  setRolloverTemplateHeadingOptionsHasBeenSet: boolean;
+  rolloverTemplateHeadingBuilder: any;
 
   reminderTime: SettingModel<string, Time>;
   useSystemNotification: SettingModel<boolean, boolean>;
@@ -26,8 +27,9 @@ class Settings {
   linkDatesToDailyNotes: SettingModel<boolean, boolean>;
   editDetectionSec: SettingModel<number, number>;
   reminderCheckIntervalSec: SettingModel<number, number>;
-  templateHeadings: SettingModel<string, string>;
-  rolloverTemplateHeading: SettingModel<string, ReminderFormatType>;
+  rolloverTemplateHeading: SettingModel<string, string>;
+  deleteOnComplete: SettingModel<boolean, boolean>;
+  removeEmptyTodos: SettingModel<boolean, boolean>;
 
   constructor() {
     const reminderFormatSettings = new ReminderFormatSettings(this.settings);
@@ -153,11 +155,31 @@ class Settings {
       .number(5)
       .build(new RawSerde());
 
-    const templateHeadings = this.settings.newSettingBuilder()
-      .key("templateHeadings")
-      .name("Template heading")
-      .desc("Which heading from your template should the todos go under")
-      .dropdown('');
+    this.rolloverTemplateHeadingBuilder = this.settings.newSettingBuilder()
+    .key("templateHeading")
+    .name("Template heading")
+    .desc("Which heading from your template should the todos go under")
+    .dropdown('none');
+
+    this.rolloverTemplateHeading = this.rolloverTemplateHeadingBuilder.build()
+
+    this.deleteOnComplete = this.settings.newSettingBuilder()
+    .key("deleteOnComplete")
+    .name("Delete todos from previous day")
+    .desc("Once todos are found, they are added to Today's Daily Note. If successful, they are deleted from Yesterday's Daily note. Enabling this is destructive and may result in lost data. Keeping this disabled will simply duplicate them from yesterday's note and place them in the appropriate section. Note that currently, duplicate todos will be deleted regardless of what heading they are in, and which heading you choose from above.")
+    .toggle(false)
+    .build(new RawSerde());
+
+    this.removeEmptyTodos = this.settings.newSettingBuilder()
+    .key("removeEmptyTodos")
+    .name("Remove empty todos in rollover")
+    .desc("If you have empty todos, they will not be rolled over to the next day.")
+    .toggle(true)
+    .build(new RawSerde());
+
+    this.settings
+    .newGroup("Rollover TODOs")
+    .addSettings(this.rolloverTemplateHeading, this.deleteOnComplete, this.removeEmptyTodos);
 
     this.settings
       .newGroup("Notification Settings")
@@ -208,18 +230,13 @@ class Settings {
     setReminderFormatConfig(config);
   }
 
-  public setRolloverTemplateHeadingSelector(val: string[]) {
-    if (this.setRolloverTemplateHeadingSelectorHasBeenSet) {
+  public setRolloverTemplateHeadingOptions(val: string[]) {
+    if (this.setRolloverTemplateHeadingOptionsHasBeenSet) {
       return
     }
-    const rolloverTemplateHeadingBuilder = this.settings.newSettingBuilder()
-    .key("templateHeading")
-    .name("Template heading")
-    .desc("Which heading from your template should the todos go under")
-    .dropdown('');
-    val.forEach(f => rolloverTemplateHeadingBuilder.addOption(`${f}`, f))
-    this.settings.newGroup("Test").addSettings(rolloverTemplateHeadingBuilder.build(new ReminderFormatTypeSerde()))
-    this.setRolloverTemplateHeadingSelectorHasBeenSet = true
+    val.forEach(f => this.rolloverTemplateHeadingBuilder.addOption(`${f}`, f))
+    this.setRolloverTemplateHeadingOptionsHasBeenSet = true
+    // this.settings.newGroup("test").addSettings(this.rolloverTemplateHeading)
   }
 
   public forEach(consumer: (setting: SettingModel<any, any>) => void) {
@@ -303,7 +320,7 @@ export class ReminderSettingTab extends PluginSettingTab {
   async display(): Promise<void> {
     let { containerEl } = this;
 		const templateHeadings: string[] = await this.getTemplateHeadings();
-    SETTINGS.setRolloverTemplateHeadingSelector(templateHeadings)
+    SETTINGS.setRolloverTemplateHeadingOptions(templateHeadings)
     SETTINGS.settings.displayOn(containerEl);
   }
 
