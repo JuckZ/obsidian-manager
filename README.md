@@ -40,6 +40,10 @@ But to our plugin:
 - [ ] attachment path convert to full relative path
 - [ ] others
 
+## Develop
+
+1. To use the CLI to set up a semantic release just run the following command inside your projects directory: `npx semantic-release-cli setup`
+
 ## Debug
 
 ### Windows(cmd.exe)
