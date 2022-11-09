@@ -11,7 +11,7 @@ jobs:
       - name: Install
         run: npm -D i
       - name: Test
-        run: npm test
+        run: npm run report:coverage
       - name: Release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
