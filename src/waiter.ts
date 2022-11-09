@@ -11,17 +11,17 @@ const orderTitle =
     '  |___/                                              \n';
 
 export function placeOrder(food, drink) {
-    const foodOrder = `${(chalk as any).green(
-        'You ordered the following food: '
-    )} ${(chalk as any).blue.bold(food)} \n`;
-    const drinkOrder = `${(chalk as any).green(
-        'You ordered the following drink: '
-    )} ${(chalk as any).blue.bold(drink)}`;
+    const foodOrder = `${(chalk as any).green('You ordered the following food: ')} ${(chalk as any).blue.bold(
+        food,
+    )} \n`;
+    const drinkOrder = `${(chalk as any).green('You ordered the following drink: ')} ${(chalk as any).blue.bold(
+        drink,
+    )}`;
 
     const order = `${orderTitle} ${boxen(foodOrder + drinkOrder, {
         padding: 1,
         margin: 1,
-        borderStyle: 'round'
+        borderStyle: 'round',
     })}`;
 
     console.log(order);

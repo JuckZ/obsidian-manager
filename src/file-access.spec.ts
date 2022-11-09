@@ -18,8 +18,6 @@ describe('file access', () => {
         jsonfile.setup(false);
 
         sut.writeFile('../test', {});
-        expect(chalk.green).toHaveBeenCalledWith(
-            'Order successfully written to file'
-        );
+        expect(chalk.green).toHaveBeenCalledWith('Order successfully written to file');
     });
 });

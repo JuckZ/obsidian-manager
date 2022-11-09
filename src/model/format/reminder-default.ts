@@ -1,9 +1,8 @@
-import { DateTime, DATE_TIME_FORMATTER } from "model/time";
-import type { Todo } from "./markdown";
-import { ReminderFormatParameterKey, ReminderModel, TodoBasedReminderFormat } from "./reminder-base";
+import { DateTime, DATE_TIME_FORMATTER } from 'model/time';
+import type { Todo } from './markdown';
+import { ReminderFormatParameterKey, ReminderModel, TodoBasedReminderFormat } from './reminder-base';
 
 class DefaultReminderModel implements ReminderModel {
-
     public static readonly regexp = /^(?<title1>.*?)\(@(?<time>.+?)\)(?<title2>.*)$/;
 
     static parse(line: string, linkDatesToDailyNotes?: boolean): DefaultReminderModel | null {
@@ -21,8 +20,8 @@ class DefaultReminderModel implements ReminderModel {
         }
         const title2 = result.groups!['title2']!;
         if (linkDatesToDailyNotes) {
-            time = time.replace("[[", "");
-            time = time.replace("]]", "");
+            time = time.replace('[[', '');
+            time = time.replace(']]', '');
         }
         return new DefaultReminderModel(linkDatesToDailyNotes, title1, time, title2);
     }
@@ -31,8 +30,8 @@ class DefaultReminderModel implements ReminderModel {
         private linkDatesToDailyNotes: boolean,
         public title1: string,
         public time: string,
-        public title2: string
-    ) { }
+        public title2: string,
+    ) {}
 
     getTitle(): string {
         return `${this.title1.trim()} ${this.title2.trim()}`.trim();
@@ -67,7 +66,6 @@ class DefaultReminderModel implements ReminderModel {
 }
 
 export class DefaultReminderFormat extends TodoBasedReminderFormat<DefaultReminderModel> {
-
     public static readonly instance = new DefaultReminderFormat();
 
     parseReminder(todo: Todo): DefaultReminderModel | null {
@@ -77,12 +75,12 @@ export class DefaultReminderFormat extends TodoBasedReminderFormat<DefaultRemind
     newReminder(title: string, time: DateTime, insertAt?: number): DefaultReminderModel {
         let title1: string;
         let title2: string;
-        if (insertAt != null){
+        if (insertAt != null) {
             title1 = title.substring(0, insertAt);
             title2 = title.substring(insertAt);
         } else {
             title1 = title;
-            title2 = "";
+            title2 = '';
         }
         return new DefaultReminderModel(this.linkDatesToDailyNotes(), title1, time.toString(), title2);
     }
@@ -91,4 +89,3 @@ export class DefaultReminderFormat extends TodoBasedReminderFormat<DefaultRemind
         return this.config.getParameter(ReminderFormatParameterKey.linkDatesToDailyNotes);
     }
 }
-

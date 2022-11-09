@@ -9,9 +9,7 @@ describe('Waiter', () => {
         const drink = 'Coke';
         sut.placeOrder(food, drink);
 
-        expect(chalk.green).toHaveBeenCalledWith(
-            'You ordered the following food: '
-        );
+        expect(chalk.green).toHaveBeenCalledWith('You ordered the following food: ');
         expect(chalk.blue.bold).toHaveBeenCalledWith(food);
     });
 
@@ -20,9 +18,7 @@ describe('Waiter', () => {
         const drink = 'Coke';
         sut.placeOrder(food, drink);
 
-        expect(chalk.green).toHaveBeenCalledWith(
-            'You ordered the following drink: '
-        );
+        expect(chalk.green).toHaveBeenCalledWith('You ordered the following drink: ');
         expect(chalk.blue.bold).toHaveBeenCalledWith(drink);
     });
 });
