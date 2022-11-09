@@ -9,9 +9,9 @@ jobs:
         with:
           node-version: '14.x'
       - name: Install
-        run: npm ci
-      # - name: Test
-      #   run: npm test
+        run: npm -D i
+      - name: Test
+        run: npm test
       - name: Release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
