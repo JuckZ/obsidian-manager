@@ -73,6 +73,7 @@ But to our plugin:
 - [ ] path converter. (for typora user who use relative path like "./xxx/xxx.ext" other than "xxx/xxx.ext" in Obsidian)
 - [ ] attachment path convert to full relative path
 - [ ] others
+  - [ ] auto update manifest.json
 
 ## Develop
 
