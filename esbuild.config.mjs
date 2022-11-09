@@ -25,6 +25,7 @@ esbuild
 			"src/main.ts",
 			// "src/manifest.json",
 			"src/styles.css",
+			"src/bin/order.bin.ts"
 		],
 		bundle: true,
 		external: [

@@ -39,9 +39,10 @@
     "semantic-release": "semantic-release"
   },
   "bin": {
-    "node-command-line-starter": "./src/bin/order.bin.js",
-    "restaurant": "./src/bin/order.bin.js"
+    "node-command-line-starter": "./dist/bin/order.bin.js",
+    "restaurant": "./dist/bin/order.bin.js"
   },
+  "restaurant": "./dist/bin/order.bin.js",
   "keywords": [
     "reminder",
     "notification",
