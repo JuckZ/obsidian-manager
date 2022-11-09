@@ -1,23 +1,28 @@
-#!/usr/bin/env node
-import { Command } from 'commander';
-import * as packgeJSON from '../../package.json';
-import { writeFile } from '../file-access';
-import { placeOrder } from '../waiter';
+import chalk from 'chalk';
+import boxen from 'boxen';
 
-const program = new Command();
+const orderTitle =
+    '\n' +
+    '                                         _           \n' +
+    '  _   _  ___  _   _ _ __    ___  _ __ __| | ___ _ __ \n' +
+    " | | | |/ _ \\| | | | '__|  / _ \\| '__/ _` |/ _ \\ '__|\n" +
+    ' | |_| | (_) | |_| | |    | (_) | | | (_| |  __/ |   \n' +
+    '  \\__, |\\___/ \\__,_|_|     \\___/|_|  \\__,_|\\___|_|   \n' +
+    '  |___/                                              \n';
 
-program
-    .version(packgeJSON.version)
-    .arguments('<food> <drink>')
-    .option(
-        '-w --write <string>',
-        'Specifies the path of the file the order will be written to'
-    )
-    .action(function(food, drink, options) {
-        const fileName = options.write;
-        placeOrder(food, drink);
-        if (fileName) {
-            writeFile(fileName, { food, drink });
-        }
-    })
-    .parse(process.argv);
+export function placeOrder(food, drink) {
+    const foodOrder = `${(chalk as any).green(
+        'You ordered the following food: '
+    )} ${(chalk as any).blue.bold(food)} \n`;
+    const drinkOrder = `${(chalk as any).green(
+        'You ordered the following drink: '
+    )} ${(chalk as any).blue.bold(drink)}`;
+
+    const order = `${orderTitle} ${boxen(foodOrder + drinkOrder, {
+        padding: 1,
+        margin: 1,
+        borderStyle: 'round'
+    })}`;
+
+    console.log(order);
+}

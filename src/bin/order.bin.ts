@@ -1,14 +1,23 @@
-'use strict';
-const jsonfile = jest.genMockFromModule<any>('jsonfile');
+#!/usr/bin/env node
+import { Command } from 'commander';
+import * as packgeJSON from '../../package.json';
+import { writeFile } from '../file-access';
+import { placeOrder } from '../waiter';
 
-let error;
+const program = new Command();
 
-const setup = createError => (error = createError);
-
-const writeFile = jest.fn((fileName, order, cb) => {
-    error ? cb('Something went wrong') : cb();
-});
-jsonfile.setup = setup;
-jsonfile.writeFile = writeFile;
-
-module.exports = jsonfile;
+program
+    .version(packgeJSON.version)
+    .arguments('<food> <drink>')
+    .option(
+        '-w --write <string>',
+        'Specifies the path of the file the order will be written to'
+    )
+    .action(function(food, drink, options) {
+        const fileName = options.write;
+        placeOrder(food, drink);
+        if (fileName) {
+            writeFile(fileName, { food, drink });
+        }
+    })
+    .parse(process.argv);
