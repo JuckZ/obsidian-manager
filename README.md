@@ -74,6 +74,7 @@ But to our plugin:
 - [ ] attachment path convert to full relative path
 - [ ] others
   - [ ] auto update manifest.json
+  - [ ] test
 
 ## Develop
 
