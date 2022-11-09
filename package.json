@@ -25,6 +25,9 @@
       "path": "@commitlint/prompt"
     }
   },
+  "files": [
+    "src"
+  ],
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "commit": "git-cz",
