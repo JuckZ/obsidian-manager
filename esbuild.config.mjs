@@ -14,7 +14,7 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === "production";
 
-const dir = prod ? "./" : process.env.OUTDIR || "./";
+const dir = prod ? "./dist" : process.env.OUTDIR || "./dist";
 
 esbuild
 	.build({
@@ -25,6 +25,7 @@ esbuild
 			"src/main.ts",
 			// "src/manifest.json",
 			"src/styles.css",
+			"src/bin/order.bin.ts"
 		],
 		bundle: true,
 		external: [
