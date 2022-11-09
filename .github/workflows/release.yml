@@ -2,10 +2,10 @@ name: Build obsidian plugin
 
 on:
   workflow_dispatch:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
+  # push:
+  #   # Sequence of patterns matched against refs/tags
+  #   tags:
+  #     - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
 
 env:
   PLUGIN_NAME: obsidian-manager # Change this to the name of your plugin-id folder
@@ -15,15 +15,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
-          node-version: "14.x" # You might need to adjust this value to your own version
+          fetch-depth: 1
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.15.x
+          cache: 'npm'
+      - name: Install
+        run: npm -D i
+      - name: Test
+        run: npm run report:coverage
       - name: Build
         id: build
         run: |
-          npm i
           npm run build --if-present
           mkdir ${{ env.PLUGIN_NAME }}
           cp main.js manifest.json styles.css ${{ env.PLUGIN_NAME }}
@@ -31,6 +38,12 @@ jobs:
           ls
           npx rexreplace "^.*?#(#+\s\[.*?\n.*?)(?=\s*#+\s\[)" "_" -s -M -G -m -o "CHANGELOG.md" > release_notes.md
           echo "::set-output name=tag_name::$(git tag --sort version:refname | tail -n 1)"
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npx semantic-release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

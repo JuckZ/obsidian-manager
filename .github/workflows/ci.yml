@@ -13,24 +13,8 @@ jobs:
         with:
           node-version: 16.15.x
           cache: 'npm'
-
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v3
-        id: npm-cache
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      
       - name: Install
-        # if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm -D i
-
       - name: Test
         run: npm run report:coverage
       - name: Release
