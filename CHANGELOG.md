@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/JuckZ/obsidian-manager/compare/v1.0.0...v1.1.0) (2022-11-09)
+
+
+### Features
+
+* **README.md:** 1. add a test todo ([75b0b26](https://github.com/JuckZ/obsidian-manager/commit/75b0b266cac41ff9c5774468249b90de827341a7))
+
 # 1.0.0 (2022-11-09)
 
 
