@@ -14,7 +14,7 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === "production";
 
-const dir = prod ? "./dist" : process.env.OUTDIR || "./dist";
+const dir = process.env.OUTDIR ? process.env.OUTDIR : (prod ? "./obsidian-manager" : "./dist");
 
 esbuild
 	.build({
