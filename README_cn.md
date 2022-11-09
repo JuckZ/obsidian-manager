@@ -70,6 +70,11 @@ eg.
 OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm run dev
 ```
 
+eg.
+```
+OUTDIR="../juckz.github.io/blogs/.obsidian/plugins/obsidian-manager" npm run dev
+```
+
 ## 参考
 
 1. obsidian-rollover-daily-todos 的所有代码 [obsidian-rollover-daily-todos](https://github.com/lumoe/obsidian-rollover-daily-todos)

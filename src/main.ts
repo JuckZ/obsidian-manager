@@ -6,6 +6,7 @@ import {
 	Setting,
 	PluginSettingTab,
 	TAbstractFile,
+	Editor,
 	TFile,
 } from "obsidian";
 import axios from "axios";
@@ -21,6 +22,7 @@ import { ReminderSettingTab, SETTINGS } from "settings";
 import { DATE_TIME_FORMATTER } from "model/time";
 import type { ReadOnlyReference } from "model/ref";
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
+import { InsertLinkModal } from "ui/modal/insert-link-modal";
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -357,6 +359,21 @@ export default class ObsidianManagerPlugin extends Plugin {
 	}
 
 	private setupCommands() {
+
+		this.addCommand({
+      id: "insert-link",
+      name: "Insert link",
+      editorCallback: (editor: Editor) => {
+        const selectedText = editor.getSelection();
+
+        const onSubmit = (text: string, url: string) => {
+          editor.replaceSelection(`[${text}](${url})`);
+        };
+
+        new InsertLinkModal(this.app, selectedText, onSubmit).open();
+      },
+    });
+
 		this.addCommand({
 			id: "obsidian-manager-sayHello",
 			name: "Say Hello",
