@@ -35,6 +35,7 @@ jobs:
         run: npm run report:coverage
       - name: Release
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo $GH_TOKEN
