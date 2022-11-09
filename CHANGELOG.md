@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/JuckZ/obsidian-manager/compare/v1.1.0...v1.2.0) (2022-11-09)
+
+
+### Bug Fixes
+
+* **esbuild.config:** 1.fix biuld dest ([72704d3](https://github.com/JuckZ/obsidian-manager/commit/72704d3694b01a09033da4bca611f171af10aca7))
+
+
+### Features
+
+* **root:** 1.修改部署文件 ([caafeef](https://github.com/JuckZ/obsidian-manager/commit/caafeef5bb80bbf1713ef6e46fa6f134f7a420d5))
+
 # [1.1.0](https://github.com/JuckZ/obsidian-manager/compare/v1.0.0...v1.1.0) (2022-11-09)
 
 
