@@ -9,7 +9,7 @@ jobs:
         with:
           node-version: '14.x'
       - name: Install
-        run: npm install -D
+        run: npm ci
       # - name: Test
       #   run: npm test
       - name: Release
