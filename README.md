@@ -1,5 +1,39 @@
 # Obsidian Manager Plugin
 
+<p align="center">
+  <img width="300px" src="https://avatars.githubusercontent.com/u/65011256?s=280&v=4">
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.org/package/obisdian-manager">
+    <img src="https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg">
+  </a>
+  <a href="https://npmcharts.com/compare/obisdian-manager?minimal=true">
+    <img src="https://img.shields.io/npm/dm/obisdian-manager.svg">
+  </a>
+  <a href="https://codecov.io/gh/JuckZ/obsidian-manager" > 
+    <img src="https://codecov.io/gh/JuckZ/obsidian-manager/branch/master/graph/badge.svg?token=D6DI2HRC5Q"/> 
+  </a>
+  <br>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.org/package/obisdian-manager">
+    <img src="https://img.shields.io/npm/v/obisdian-manager/latest.svg">
+  </a>
+  <a href="https://www.npmjs.org/package/obisdian-manager">
+    <img src="https://img.shields.io/npm/v/obisdian-manager/next.svg">
+  </a>
+  <a href="https://www.npmjs.org/package/obisdian-manager">
+    <img src="https://img.shields.io/npm/v/obisdian-manager/beta.svg">
+  </a>
+</p>
+
+<p align="center">Obsidian Manager Plugin - An Obsidian plugin library</p>
+
+- 💪 Coverage testing based on Jest
+- 🔥 Written in TypeScript
+
 A Toolkit try to solve all the trivial problems most people usually encountered in obsidian.
 
 ## Getting started
@@ -69,6 +103,10 @@ eg.
 ```bash
 OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm run dev
 ```
+
+## Test Report
+
+<img src="https://codecov.io/gh/JuckZ/obsidian-manager/branch/master/graphs/sunburst.svg?token=D6DI2HRC5Q"/> 
 
 ## Reference
 
