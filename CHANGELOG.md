@@ -1,3 +1,11 @@
+## [1.4.6](https://github.com/JuckZ/obsidian-manager/compare/v1.4.5...v1.4.6) (2022-11-10)
+
+
+### Bug Fixes
+
+* **build:** 1.style.css to styles.css 2.package.json bin ([e2d76ca](https://github.com/JuckZ/obsidian-manager/commit/e2d76ca22e3613e764eb3c592c26dddf0273d3b2))
+* **build:** 1.style.css to styles.css 2.package.json bin ([aa999f2](https://github.com/JuckZ/obsidian-manager/commit/aa999f2f06f443423a21957022aa0ea1c7f4bd77))
+
 ## [1.4.5](https://github.com/JuckZ/obsidian-manager/compare/v1.4.4...v1.4.5) (2022-11-10)
 
 
