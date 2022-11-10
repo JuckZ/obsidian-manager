@@ -6,16 +6,18 @@
     "@semantic-release/changelog",
     "@semantic-release/npm",
     ["@semantic-release/git", {
-      "assets": ["package.json", "CHANGELOG.md", "obsidian-manager/styles.css", "obsidian-manager/main.js", "obsidian-manager/manifest.json"],
+      "assets": ["package.json", "CHANGELOG.md", "License", "manifest.json", "versions.json", "obsidian-manager/styles.css", "obsidian-manager/main.js"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
     ["@semantic-release/github", {
       "assets": [
         {"path": "package.json", "label": "package.json"},
         {"path": "CHANGELOG.md", "label": "CHANGELOG.md"},
+        {"path": "License", "label": "License"},
+        {"path": "manifest.json", "label": "manifest.json"},
+        {"path": "versions.json", "label": "versions.json"},
         {"path": "obsidian-manager/styles.css", "label": "styles.css"},
-        {"path": "obsidian-manager/main.js", "label": "main.js"},
-        {"path": "obsidian-manager/manifest.json", "label": "manifest.json"}
+        {"path": "obsidian-manager/main.js", "label": "main.js"}
       ]
     }]
   ]

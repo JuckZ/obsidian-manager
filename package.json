@@ -36,7 +36,9 @@
     "test:coverage": "jest --coverage",
     "report:coverage": "npm run test:coverage && codecov",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "ver": "node version-bump.mjs",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "bin": {
     "buildme-and-change-path": "./src/bin/order.bin.ts"
@@ -63,6 +65,7 @@
     "@semantic-release/commit-analyzer": "^9.0.2",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^8.0.6",
     "@semantic-release/npm": "^9.0.1",
     "@semantic-release/release-notes-generator": "^10.0.3",
     "@types/jest": "^29.2.2",
@@ -88,7 +91,6 @@
     "typescript": "4.7.4"
   },
   "dependencies": {
-    "@semantic-release/github": "^8.0.6",
     "axios": "^1.1.3",
     "boxen": "^5.1.2",
     "commander": "^9.4.1",
