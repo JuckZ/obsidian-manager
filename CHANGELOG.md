@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/JuckZ/obsidian-manager/compare/v1.4.1...v1.4.2) (2022-11-10)
+
+
+### Bug Fixes
+
+* **readme:** 1.v1 todo ([1f12422](https://github.com/JuckZ/obsidian-manager/commit/1f12422b8628d123eaac6e8a88dbaad8f8f77cae))
+
 ## [1.4.1](https://github.com/JuckZ/obsidian-manager/compare/v1.4.0...v1.4.1) (2022-11-10)
 
 
