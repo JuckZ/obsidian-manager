@@ -37,7 +37,7 @@
     "report:coverage": "npm run test:coverage && codecov",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "semantic-release": "semantic-release",
-    "version": "node version-bump.mjs && ls"
+    "version": "node version-bump.mjs"
   },
   "bin": {
     "buildme-and-change-path": "./src/bin/order.bin.ts"
