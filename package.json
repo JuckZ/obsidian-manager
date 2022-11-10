@@ -37,8 +37,7 @@
     "report:coverage": "npm run test:coverage && codecov",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "semantic-release": "semantic-release",
-    "ver": "node version-bump.mjs",
-    "version": "node version-bump.mjs && git add manifest.json versions.json"
+    "version": "node version-bump.mjs && ls"
   },
   "bin": {
     "buildme-and-change-path": "./src/bin/order.bin.ts"
@@ -101,5 +100,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/JuckZ/obsidian-manager.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
   }
 }
