@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/JuckZ/obsidian-manager/compare/v1.2.0...v1.3.0) (2022-11-10)
+
+
+### Features
+
+* **release config:** 1.change release config ([66102be](https://github.com/JuckZ/obsidian-manager/commit/66102be4337ed49562af3dc332aa9790cff95927))
+
 # [1.2.0](https://github.com/JuckZ/obsidian-manager/compare/v1.1.0...v1.2.0) (2022-11-09)
 
 
