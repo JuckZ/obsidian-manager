@@ -39,8 +39,7 @@
     "semantic-release": "semantic-release"
   },
   "bin": {
-    "node-command-line-starter": "./src/bin/order.bin.js",
-    "restaurant": "./src/bin/order.bin.js"
+    "buildme-and-change-path": "./src/bin/order.bin.ts"
   },
   "keywords": [
     "reminder",
