@@ -1,0 +1,10 @@
+{
+	"id": "obsidian-manager",
+	"name": "Obsidian Manager",
+	"version": "1.0.2",
+	"minAppVersion": "0.15.0",
+	"description": "A Toolkit try to solve all the trivial problems most people usually encountered in obsidian.",
+	"author": "Juck",
+	"authorUrl": "https://github.com/JuckZ",
+	"isDesktopOnly": false
+}

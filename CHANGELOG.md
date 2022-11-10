@@ -1,3 +1,10 @@
+## [1.4.3](https://github.com/JuckZ/obsidian-manager/compare/v1.4.2...v1.4.3) (2022-11-10)
+
+
+### Bug Fixes
+
+* **release:** 1.clean build 2.debug style.css file not exist ([33fdd24](https://github.com/JuckZ/obsidian-manager/commit/33fdd24d1c2e56faae316de6f87c5e7e09bed3eb))
+
 ## [1.4.2](https://github.com/JuckZ/obsidian-manager/compare/v1.4.1...v1.4.2) (2022-11-10)
 
 
