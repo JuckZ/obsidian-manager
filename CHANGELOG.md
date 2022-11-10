@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/JuckZ/obsidian-manager/compare/v1.3.0...v1.3.1) (2022-11-10)
+
+
+### Bug Fixes
+
+* **release:** 1.reconfig ([3a4c270](https://github.com/JuckZ/obsidian-manager/commit/3a4c2701b5b5e07a7901866c2b95e8ca42b5a1b4))
+
 # [1.3.0](https://github.com/JuckZ/obsidian-manager/compare/v1.2.0...v1.3.0) (2022-11-10)
 
 
