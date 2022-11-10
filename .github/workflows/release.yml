@@ -32,11 +32,6 @@ jobs:
         run: |
           OUTDIR="${{ env.PLUGIN_NAME }}" npm run build --if-present
           cp manifest.json ${{ env.PLUGIN_NAME }}
-      - name: Debug
-        id: debug
-        run: |
-          cd obsidian-manager
-          ls -la
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
