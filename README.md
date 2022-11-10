@@ -75,6 +75,7 @@ But to our plugin:
 - [ ] others
   - [ ] auto update manifest.json
   - [ ] test v1
+  - [ ] npm install error
 
 ## Develop
 
