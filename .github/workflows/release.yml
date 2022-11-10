@@ -35,6 +35,7 @@ jobs:
       - name: Debug
         id: debug
         run: |
+          cd obsidian-manager
           ls -la
       - name: Release
         env:
