@@ -6,15 +6,14 @@
     "@semantic-release/changelog",
     "@semantic-release/npm",
     ["@semantic-release/git", {
-      "assets": ["package.json", "CHANGELOG.md"],
+      "assets": ["package.json", "CHANGELOG.md", "obsidian-manager/style.css", "obsidian-manager/main.js", "obsidian-manager/style.css"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
     ["@semantic-release/github", {
       "assets": [
         {"path": "obsidian-manager/main.js", "label": "main.js distribution"},
         {"path": "obsidian-manager/style.css", "label": "CSS distribution"},
-        {"path": "obsidian-manager/manifest.json", "label": "manifest distribution"},
-        {"path": "**", "label": "all file distribution"}
+        {"path": "obsidian-manager/manifest.json", "label": "manifest distribution"}
       ]
     }]
   ]
