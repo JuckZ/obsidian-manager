@@ -1,23 +1,18 @@
 {
   "name": "obsidian-manager",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "description": "This is a sample plugin for Obsidian (https://obsidian.md)",
   "main": "main.js",
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+      "commit-msg": "commitlint -e $GIT_PARAMS"
     }
   },
   "lint-staged": {
     "{src,__mocks__,bin}/**/*.ts": [
       "prettier --write",
       "git add"
-    ]
-  },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
     ]
   },
   "config": {
@@ -37,11 +32,15 @@
     "report:coverage": "npm run test:coverage && codecov",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "semantic-release": "semantic-release",
-    "version": "node version-bump.mjs"
+    "version": "node version-bump.mjs",
+    "prepare": "husky install"
   },
   "bin": {
-    "buildme-and-change-path": "./src/bin/order.bin.ts"
+    "example": "./dest/bin/order.bin.ts"
   },
+  "files": [
+    "dest"
+  ],
   "keywords": [
     "reminder",
     "notification",
