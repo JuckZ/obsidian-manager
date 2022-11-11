@@ -15,11 +15,6 @@
       "git add"
     ]
   },
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
   "config": {
     "commitizen": {
       "path": "@commitlint/prompt"
@@ -40,8 +35,11 @@
     "version": "node version-bump.mjs"
   },
   "bin": {
-    "buildme-and-change-path": "./src/bin/order.bin.ts"
+    "example": "./dest/bin/order.bin.ts"
   },
+  "files": [
+    "dest"
+  ],
   "keywords": [
     "reminder",
     "notification",
