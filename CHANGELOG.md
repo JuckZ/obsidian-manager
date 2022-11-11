@@ -1,3 +1,11 @@
+## [1.4.8](https://github.com/JuckZ/obsidian-manager/compare/v1.4.7...v1.4.8) (2022-11-10)
+
+
+### Bug Fixes
+
+* 1.version scritp 2. npm tag ([0e4f9c8](https://github.com/JuckZ/obsidian-manager/commit/0e4f9c81380d1d5af4503dcdd72ee0dbe70da089))
+* 1.version scritp 2. npm tag ([c1dd2e0](https://github.com/JuckZ/obsidian-manager/commit/c1dd2e00b410eb7667ea2611debb41d7ba6ddcca))
+
 ## [1.4.7](https://github.com/JuckZ/obsidian-manager/compare/v1.4.6...v1.4.7) (2022-11-10)
 
 

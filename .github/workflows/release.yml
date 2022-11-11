@@ -3,13 +3,9 @@ name: Build obsidian plugin
 on:
   workflow_dispatch:
   push:
-  # push:
-  #   # Sequence of patterns matched against refs/tags
-  #   tags:
-  #     - "*" # Push events to matching any tag format, i.e. 1.0, 20.15.10
 
 env:
-  PLUGIN_NAME: obsidian-manager # Change this to the name of your plugin-id folder
+  PLUGIN_NAME: obsidian-manager
 
 jobs:
   build:
@@ -30,8 +26,8 @@ jobs:
       - name: Build
         id: build
         run: |
-          OUTDIR="${{ env.PLUGIN_NAME }}" npm run build --if-present
-          cp manifest.json ${{ env.PLUGIN_NAME }}
+          npm run build --if-present
+          cp manifest.json dest
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

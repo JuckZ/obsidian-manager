@@ -14,7 +14,7 @@ node_modules
 # Exclude sourcemaps
 *.map
 
-./dest
+dest
 ./obsidian-manager
 
 # obsidian
