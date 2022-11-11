@@ -14,7 +14,7 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === "production";
 
-const dir = process.env.OUTDIR ? process.env.OUTDIR : (prod ? "./obsidian-manager" : "./dest");
+const dir = process.env.OUTDIR ? process.env.OUTDIR : "dest";
 
 esbuild
 	.build({
@@ -23,7 +23,6 @@ esbuild
 		},
 		entryPoints: [
 			"src/main.ts",
-			// "src/manifest.json",
 			"src/styles.css",
 			"src/bin/order.bin.ts"
 		],
