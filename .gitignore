@@ -15,7 +15,7 @@ node_modules
 *.map
 
 dest
-./obsidian-manager
+obsidian-manager
 
 # obsidian
 ./data.json

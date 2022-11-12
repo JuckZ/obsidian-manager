@@ -1,3 +1,10 @@
+## [1.4.9](https://github.com/JuckZ/obsidian-manager/compare/v1.4.8...v1.4.9) (2022-11-11)
+
+
+### Bug Fixes
+
+* **release:** 1. change config 2.add dest file to support 'example' bin ([71d870d](https://github.com/JuckZ/obsidian-manager/commit/71d870dbadfb5ba26d0d84be41f375a28f6739d5))
+
 ## [1.4.8](https://github.com/JuckZ/obsidian-manager/compare/v1.4.7...v1.4.8) (2022-11-10)
 
 
