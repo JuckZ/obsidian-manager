@@ -19,6 +19,7 @@ import {
 import { DateTime, Later, Time } from 'model/time';
 import { App, PluginSettingTab, Plugin_2, TAbstractFile } from 'obsidian';
 import { getDailyNoteSettings, IPeriodicNoteSettings } from 'obsidian-daily-notes-interface';
+import { PluginDataIO } from 'data';
 
 export const TAG_RESCAN = 're-scan';
 
@@ -317,7 +318,8 @@ class ReminderFormatSettings {
 export const SETTINGS = new Settings();
 
 export class ReminderSettingTab extends PluginSettingTab {
-    constructor(app: App, plugin: Plugin_2) {
+
+    constructor(app: App, plugin: Plugin_2, protected pluginData: PluginDataIO) {
         super(app, plugin);
     }
 
@@ -355,5 +357,6 @@ export class ReminderSettingTab extends PluginSettingTab {
 
     hide() {
         // SETTINGS
+        this.pluginData.save()
     }
 }

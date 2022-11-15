@@ -452,7 +452,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         veggies.createEl('span', { text: '🥦' });
         veggies.createEl('span', { text: '🥬' });
         // 设置选项卡
-        this.addSettingTab(new ReminderSettingTab(this.app, this));
+        this.addSettingTab(new ReminderSettingTab(this.app, this, this.pluginDataIO));
         // 左侧菜单，使用自定义图标
         this.addRibbonIcon('circle', 'Sample Plugin', event => {
             new Notice('This is a notice!');

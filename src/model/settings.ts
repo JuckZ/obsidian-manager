@@ -135,11 +135,6 @@ export class SettingModelBuilder {
         return this;
     }
 
-    enableWhen(enableWhen: AnyValueChanged) {
-        this.context.anyValueChanged = enableWhen;
-        return this;
-    }
-
     text(initValue: string) {
         return new TextSettingModelBuilder(this.context, false, initValue);
     }
