@@ -17,7 +17,7 @@ import {
     TimeSerde,
 } from 'model/settings';
 import { DateTime, Later, Time } from 'model/time';
-import { App, PluginSettingTab, Plugin_2, Setting, TAbstractFile } from 'obsidian';
+import { App, PluginSettingTab, Plugin_2, TAbstractFile } from 'obsidian';
 import { getDailyNoteSettings, IPeriodicNoteSettings } from 'obsidian-daily-notes-interface';
 
 export const TAG_RESCAN = 're-scan';
@@ -41,7 +41,7 @@ class Settings {
     linkDatesToDailyNotes: SettingModel<boolean, boolean>;
     editDetectionSec: SettingModel<number, number>;
     reminderCheckIntervalSec: SettingModel<number, number>;
-    rolloverTemplateHeading: SettingModel<string, string>;
+    templateHeading: SettingModel<string, string>;
     deleteOnComplete: SettingModel<boolean, boolean>;
     removeEmptyTodos: SettingModel<boolean, boolean>;
 
@@ -195,7 +195,7 @@ class Settings {
             .desc('Which heading from your template should the todos go under')
             .dropdown('none');
 
-        this.rolloverTemplateHeading = this.rolloverTemplateHeadingBuilder.build();
+        this.templateHeading = this.rolloverTemplateHeadingBuilder.build();
 
         this.deleteOnComplete = this.settings
             .newSettingBuilder()
@@ -217,7 +217,7 @@ class Settings {
 
         this.settings
             .newGroup('Rollover TODOs')
-            .addSettings(this.rolloverTemplateHeading, this.deleteOnComplete, this.removeEmptyTodos);
+            .addSettings(this.templateHeading, this.deleteOnComplete, this.removeEmptyTodos);
 
         this.settings
             .newGroup('Notification Settings')
@@ -258,7 +258,7 @@ class Settings {
         }
         val.forEach(f => this.rolloverTemplateHeadingBuilder.addOption(`${f}`, f));
         this.setRolloverTemplateHeadingOptionsHasBeenSet = true;
-        // this.settings.newGroup("test").addSettings(this.rolloverTemplateHeading)
+        // this.settings.newGroup("test").addSettings(this.templateHeading)
     }
 
     public forEach(consumer: (setting: SettingModel<any, any>) => void) {
@@ -339,6 +339,15 @@ export class ReminderSettingTab extends PluginSettingTab {
 
     async display(): Promise<void> {
         let { containerEl } = this;
+        // let ele1 = containerEl.createEl("h1", { text: "Heading 1" });
+        // let ele2 = containerEl.createEl("div", { cls: "book" });
+        // let ele3 = containerEl.createEl("div", { text: "How to Take Smart Notes", cls: "book__title" });
+        // let ele4 = containerEl.createEl("small", { text: "Sönke Ahrens", cls: "book__author" });
+        // containerEl = containerEl.appendChild(ele1)
+        // containerEl = containerEl.appendChild(ele2)
+        // containerEl = containerEl.appendChild(ele3)
+        // containerEl = containerEl.appendChild(ele4)
+        // containerEl.toggleClass("danger", status === "error");
         const templateHeadings: string[] = await this.getTemplateHeadings();
         SETTINGS.setRolloverTemplateHeadingOptions(templateHeadings);
         SETTINGS.settings.displayOn(containerEl);

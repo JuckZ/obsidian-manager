@@ -1,51 +1,41 @@
-import { App, Notice, Plugin, PluginManifest, Setting, PluginSettingTab, TAbstractFile, Editor, TFile } from 'obsidian';
+import {
+    App,
+    Menu,
+    Notice,
+    Plugin,
+    PluginManifest,
+    Editor,
+    TFile,
+    addIcon,
+    setIcon,
+    EditorPosition,
+    MarkdownView,
+} from 'obsidian';
 import axios from 'axios';
 import { getDailyNoteSettings, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
-import { Reminder, Reminders } from 'model/reminder';
+import { Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
-import type { ReadOnlyReference } from 'model/ref';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { InsertLinkModal } from 'ui/modal/insert-link-modal';
+import { InsertLinkModal, Example1Modal, Example2Modal } from 'ui/modal/insert-link-modal';
+import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
+import { Emoji } from 'render/Emoji';
+import Logger from 'utils/logger';
+
+interface PasteFunction {
+    (this: HTMLElement, ev: ClipboardEvent): void;
+}
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
-/* Just some boilerplate code for recursively going through subheadings for later
-function createRepresentationFromHeadings(headings) {
-  let i = 0;
-  const tags = [];
-
-  (function recurse(depth) {
-    let unclosedLi = false;
-    while (i < headings.length) {
-      const [hashes, data] = headings[i].split("# ");
-      if (hashes.length < depth) {
-        break;
-      } else if (hashes.length === depth) {
-        if (unclosedLi) tags.push('</li>');
-        unclosedLi = true;
-        tags.push('<li>', data);
-        i++;
-      } else {
-        tags.push('<ul>');
-        recurse(depth + 1);
-        tags.push('</ul>');
-      }
-    }
-    if (unclosedLi) tags.push('</li>');
-  })(-1);
-  return tags.join('\n');
-}
-*/
-
 export default class ObsidianManagerPlugin extends Plugin {
     pluginDataIO: PluginDataIO;
+    pasteFunction: PasteFunction;
     private undoHistory: any[];
     private undoHistoryTime: Date;
     private remindersController: RemindersController;
-    private settings: any;
     private reminders: Reminders;
 
     constructor(app: App, manifest: PluginManifest) {
@@ -53,14 +43,12 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.reminders = new Reminders(() => {
             this.pluginDataIO.changed = true;
         });
+        this.undoHistory = [];
+        this.undoHistoryTime = new Date();
         this.pluginDataIO = new PluginDataIO(this, this.reminders);
         this.reminders.reminderTime = SETTINGS.reminderTime;
         DATE_TIME_FORMATTER.setTimeFormat(SETTINGS.dateFormat, SETTINGS.dateTimeFormat, SETTINGS.strictDateFormat);
         this.remindersController = new RemindersController(app.vault, this.reminders);
-    }
-
-    async saveSettings() {
-        await this.saveData(this.settings);
     }
 
     isDailyNotesEnabled() {
@@ -129,6 +117,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     async rollover(file: TFile | undefined) {
         /*** First we check if the file created is actually a valid daily note ***/
         const { folder = '', format } = getDailyNoteSettings();
+        console.log('-=-=-=-=');
         let ignoreCreationTime = false;
 
         // Rollover can be called, but we need to get the daily file
@@ -157,8 +146,8 @@ export default class ObsidianManagerPlugin extends Plugin {
                 10000,
             );
         } else {
-            const { templateHeading, deleteOnComplete, removeEmptyTodos } = this.settings;
-
+            const { templateHeading, deleteOnComplete, removeEmptyTodos } = SETTINGS;
+            console.warn(templateHeading.rawValue.value);
             // check if there is a daily note from yesterday
             const lastDailyNote = this.getLastDailyNote();
             if (lastDailyNote == null) return;
@@ -205,7 +194,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
             // get today's content and modify it
             let templateHeadingNotFoundMessage = '';
-            const templateHeadingSelected = templateHeading !== 'none';
+            const templateHeadingSelected = templateHeading.rawValue.value !== 'none';
 
             if (todos_today.length > 0) {
                 let dailyNoteContent = await this.app.vault.read(file);
@@ -219,11 +208,11 @@ export default class ObsidianManagerPlugin extends Plugin {
                 // If template heading is selected, try to rollover to template heading
                 if (templateHeadingSelected) {
                     const contentAddedToHeading = dailyNoteContent.replace(
-                        templateHeading,
+                        templateHeading.value,
                         `${templateHeading}${todos_todayString}`,
                     );
                     if (contentAddedToHeading == dailyNoteContent) {
-                        templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading}' in today's daily not. Rolling todos to end of file.`;
+                        templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading.value}' in today's daily not. Rolling todos to end of file.`;
                     } else {
                         dailyNoteContent = contentAddedToHeading;
                     }
@@ -287,9 +276,75 @@ export default class ObsidianManagerPlugin extends Plugin {
         }
     }
 
-    override async onload() {
+    async activateView() {
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+
+        await this.app.workspace.getRightLeaf(false).setViewState({
+            type: VIEW_TYPE_EXAMPLE,
+            active: true,
+        });
+
+        this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE)[0]);
+    }
+
+    public static getEditorPositionFromIndex(content: string, index: number): EditorPosition {
+        let substr = content.substr(0, index);
+
+        let l = 0;
+        let offset = -1;
+        let r = -1;
+        for (; (r = substr.indexOf('\n', r + 1)) !== -1; l++, offset = r);
+        offset += 1;
+
+        let ch = content.substr(offset, index - offset).length;
+
+        return { line: l, ch: ch };
+    }
+
+    async customizePaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
+        console.warn(evt);
+        console.dir(evt.clipboardData?.files);
+        let clipboardText = evt.clipboardData?.getData('text/plain') || 'xxx';
+        console.warn(clipboardText);
+        /* @ts-ignore */
+        // evt.clipboardData?.setDragImage
+        await evt.clipboardData.setData('text/plain', 'Hello, world!');
+        // if (clipboardText == null || clipboardText == '') return;
+        evt.stopPropagation();
+        evt.preventDefault();
+        let newText = evt.clipboardData?.getData('text/plain') || 'lalala';
+        const text = editor.getValue();
+        const start = text.indexOf(clipboardText);
+        if (start < 0) {
+            console.log(`Unable to find text "${clipboardText}" in current editor`);
+        } else {
+            const end = start + clipboardText.length;
+            const startPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, start);
+            const endPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, end);
+            console.warn(newText)
+            editor.replaceRange(newText, startPos, endPos);
+            return;
+        }
+    }
+
+    override async onload(): Promise<void> {
         this.setupUI();
         this.setupCommands();
+        // TODO 完善
+        // this.pasteFunction = this.customizePaste.bind(this);
+        this.registerMarkdownPostProcessor((element, context) => {
+            const codeblocks = element.querySelectorAll('code');
+            for (let index = 0; index < codeblocks.length; index++) {
+                const codeblock = codeblocks.item(index);
+                const text = codeblock.innerText.trim();
+                const isEmoji = text[0] === ':' && text[text.length - 1] === ':';
+
+                if (isEmoji) {
+                    // highlight-next-line
+                    context.addChild(new Emoji(codeblock, text));
+                }
+            }
+        });
         this.app.workspace.onLayoutReady(async () => {
             await this.pluginDataIO.load();
             if (this.pluginDataIO.debug.value) {
@@ -299,10 +354,17 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
     }
 
+    override async onunload(): Promise<void> {
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+    }
+
     private setupCommands() {
         this.addCommand({
             id: 'insert-link',
             name: 'Insert link',
+            // 带条件的编辑器指令
+            // editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {}
+            // 编辑器指令
             editorCallback: (editor: Editor) => {
                 const selectedText = editor.getSelection();
 
@@ -315,18 +377,30 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
 
         this.addCommand({
+            id: 'obsidian-manager-sayHello1',
+            name: 'Say Example1Modal',
+            callback: () => {
+                const eve = (...args) => {
+                    console.warn(...args);
+                };
+                new Example1Modal(this.app).open();
+            },
+        });
+
+        this.addCommand({
             id: 'obsidian-manager-sayHello',
             name: 'Say Hello',
+            hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'a' }],
             callback: () => {
                 this.sayHello();
                 // TODO 读取配置，防止泄露密码
-                axios
-                    .post('https://ntfy.ihave.cool/test', 'Look ma, with auth', {
-                        headers: {
-                            Authorization: 'Basic xxx',
-                        },
-                    })
-                    .then(res => console.log(res));
+                // axios
+                //     .post('https://ntfy.ihave.cool/test', 'Look ma, with auth', {
+                //         headers: {
+                //             Authorization: 'Basic xxx',
+                //         },
+                //     })
+                //     .then(res => console.log(res));
             },
         });
 
@@ -339,7 +413,9 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.addCommand({
             id: 'obsidian-manager-undo',
             name: 'Undo last rollover',
+            // 带条件的指令
             checkCallback: checking => {
+                console.log(this);
                 // no history, don't allow undo
                 if (this.undoHistory.length > 0) {
                     const now = window.moment();
@@ -360,14 +436,63 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private setupUI() {
+        this.registerView(VIEW_TYPE_EXAMPLE, leaf => new ExampleView(leaf));
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+        // 自定义图标
+        addIcon('circle', `<circle cx="50" cy="50" r="50" fill="currentColor" />`);
+        // 状态栏图标
+        const item = this.addStatusBarItem();
+        item.createEl('span', { text: 'Hello from the status bar 👋' });
+        // setIcon(item, "info", 14);
+        const fruits = this.addStatusBarItem();
+        fruits.createEl('span', { text: '🍎' });
+        fruits.createEl('span', { text: '🍌' });
+
+        const veggies = this.addStatusBarItem();
+        veggies.createEl('span', { text: '🥦' });
+        veggies.createEl('span', { text: '🥬' });
+        // 设置选项卡
         this.addSettingTab(new ReminderSettingTab(this.app, this));
-        this.addRibbonIcon('dice', 'Sample Plugin', () => {
+        // 左侧菜单，使用自定义图标
+        this.addRibbonIcon('circle', 'Sample Plugin', event => {
             new Notice('This is a notice!');
+            const menu = new Menu();
+            menu.addItem(item =>
+                item
+                    .setTitle('Test')
+                    .setIcon('documents')
+                    .onClick(() => {
+                        new Notice('Tested');
+                    }),
+            );
+            menu.showAtMouseEvent(event);
+        });
+        this.addRibbonIcon('dice', 'Activate view', () => {
+            this.activateView();
         });
     }
 
     private watchVault() {
         [
+            this.app.workspace.on('editor-paste', this.pasteFunction),
+            this.app.workspace.on('file-menu', (menu, file) => {
+                menu.addItem(item => {
+                    item.setTitle('Print file path 👈')
+                        .setIcon('document')
+                        .onClick(async () => {
+                            new Notice(file.path);
+                        });
+                });
+            }),
+            this.app.workspace.on('editor-menu', (menu, editor, view) => {
+                menu.addItem(item => {
+                    item.setTitle('Print file path 👈')
+                        .setIcon('document')
+                        .onClick(async () => {
+                            new Notice(view.file.path);
+                        });
+                });
+            }),
             this.app.vault.on('create', async file => {
                 /* @ts-ignore */
                 this.rollover(file);

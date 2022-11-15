@@ -3,6 +3,7 @@ import { Reminder, Reminders } from 'model/reminder';
 import { DateTime } from 'model/time';
 import type { Plugin_2 } from 'obsidian';
 import { SETTINGS, TAG_RESCAN } from 'settings';
+import Logger from 'utils/logger';
 
 interface ReminderData {
     title: string;
@@ -31,8 +32,8 @@ export class PluginDataIO {
     }
 
     async load() {
-        console.debug('Load reminder plugin data');
         const data = await this.plugin.loadData();
+        Logger.error(data)
         if (!data) {
             this.scanned.value = false;
             return;
@@ -68,6 +69,7 @@ export class PluginDataIO {
     }
 
     async save(force: boolean = false) {
+        Logger.warn('save exec')
         if (!force && !this.changed) {
             return;
         }
