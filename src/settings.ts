@@ -28,6 +28,7 @@ class Settings {
 
     setRolloverTemplateHeadingOptionsHasBeenSet: boolean;
     rolloverTemplateHeadingBuilder: any;
+    periodicNoteSetting: IPeriodicNoteSettings;
 
     reminderTime: SettingModel<string, Time>;
     useSystemNotification: SettingModel<boolean, boolean>;
@@ -48,6 +49,7 @@ class Settings {
 
     constructor() {
         const reminderFormatSettings = new ReminderFormatSettings(this.settings);
+        this.periodicNoteSetting = getDailyNoteSettings();
 
         this.reminderTime = this.settings
             .newSettingBuilder()
@@ -324,9 +326,7 @@ export class ReminderSettingTab extends PluginSettingTab {
     }
 
     async getTemplateHeadings(): Promise<string[]> {
-        const periodicNoteSetting: IPeriodicNoteSettings = getDailyNoteSettings();
-        // const { template } : { template: string } = getDailyNoteSettings()
-        const template: string | undefined = periodicNoteSetting.template;
+        const { template } = SETTINGS.periodicNoteSetting
         if (!template) return [];
 
         let file: TAbstractFile | null = this.app.vault.getAbstractFileByPath(template);
@@ -356,7 +356,6 @@ export class ReminderSettingTab extends PluginSettingTab {
     }
 
     hide() {
-        // SETTINGS
         this.pluginData.save()
     }
 }

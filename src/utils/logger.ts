@@ -17,13 +17,19 @@ const printer = (args, chalkify) => {
 }
 
 export default class Logger {
+    static log(...args: any) {
+        printer(args, chalk.cyanBright.bold)
+    }
+    static dir(...args: any) {
+        printer(args, chalk.blueBright.bold)
+    }
     static info(...args: any) {
-        printer(args, chalk.bgGreen.blue.bold)
+        printer(args, chalk.blue.bold)
     }
     static warn(...args: any) {
-        printer(args, chalk.bgGreen.yellow.bold)
+        printer(args, chalk.yellow.bold)
     }
     static error(...args: any) {
-        printer(args, chalk.bgGreen.red.bold)
+        printer(args, chalk.red.bold)
     }
 }

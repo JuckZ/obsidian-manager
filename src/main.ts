@@ -9,10 +9,11 @@ import {
     addIcon,
     setIcon,
     EditorPosition,
-    MarkdownView,
+    MarkdownView
 } from 'obsidian';
+import moment from 'moment';
 import axios from 'axios';
-import { getDailyNoteSettings, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
+import { getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
 import { Reminders } from 'model/reminder';
@@ -63,8 +64,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     getLastDailyNote(): TFile {
-        const { moment } = window;
-        const { folder = '', format } = getDailyNoteSettings();
+        const { folder = '', format } = SETTINGS.periodicNoteSetting;
 
         // get all notes in directory that aren't null
         const dailyNoteFiles = this.app.vault
@@ -98,12 +98,12 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async sortHeadersIntoHeirarchy(file: TFile) {
-        ///console.log('testing')
+        ///Logger.log('testing')
         const templateContents = await this.app.vault.read(file);
         const allHeadings = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(([heading]) => heading);
 
         if (allHeadings.length > 0) {
-            // console.log(createRepresentationFromHeadings(allHeadings));
+            // Logger.log(createRepresentationFromHeadings(allHeadings));
         }
     }
 
@@ -116,8 +116,8 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     async rollover(file: TFile | undefined) {
         /*** First we check if the file created is actually a valid daily note ***/
-        const { folder = '', format } = getDailyNoteSettings();
-        console.log('-=-=-=-=');
+        const { folder = '', format } = SETTINGS.periodicNoteSetting;
+        Logger.log('-=-=-=-=');
         let ignoreCreationTime = false;
 
         // Rollover can be called, but we need to get the daily file
@@ -147,7 +147,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             );
         } else {
             const { templateHeading, deleteOnComplete, removeEmptyTodos } = SETTINGS;
-            console.warn(templateHeading.rawValue.value);
+            Logger.warn(templateHeading.rawValue.value);
             // check if there is a daily note from yesterday
             const lastDailyNote = this.getLastDailyNote();
             if (lastDailyNote == null) return;
@@ -158,7 +158,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             // get unfinished todos from yesterday, if exist
             let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
             if (todos_yesterday.length == 0) {
-                console.log(`rollover-daily-todos: 0 todos found in ${lastDailyNote.basename}.md`);
+                Logger.log(`rollover-daily-todos: 0 todos found in ${lastDailyNote.basename}.md`);
                 return;
             }
 
@@ -302,10 +302,10 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async customizePaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
-        console.warn(evt);
-        console.dir(evt.clipboardData?.files);
+        Logger.warn(evt);
+        Logger.dir(evt.clipboardData?.files);
         let clipboardText = evt.clipboardData?.getData('text/plain') || 'xxx';
-        console.warn(clipboardText);
+        Logger.warn(clipboardText);
         /* @ts-ignore */
         // evt.clipboardData?.setDragImage
         await evt.clipboardData.setData('text/plain', 'Hello, world!');
@@ -316,12 +316,12 @@ export default class ObsidianManagerPlugin extends Plugin {
         const text = editor.getValue();
         const start = text.indexOf(clipboardText);
         if (start < 0) {
-            console.log(`Unable to find text "${clipboardText}" in current editor`);
+            Logger.log(`Unable to find text "${clipboardText}" in current editor`);
         } else {
             const end = start + clipboardText.length;
             const startPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, start);
             const endPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, end);
-            console.warn(newText)
+            Logger.warn(newText)
             editor.replaceRange(newText, startPos, endPos);
             return;
         }
@@ -381,7 +381,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Say Example1Modal',
             callback: () => {
                 const eve = (...args) => {
-                    console.warn(...args);
+                    Logger.warn(...args);
                 };
                 new Example1Modal(this.app).open();
             },
@@ -400,7 +400,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                 //             Authorization: 'Basic xxx',
                 //         },
                 //     })
-                //     .then(res => console.log(res));
+                //     .then(res => Logger.log(res));
             },
         });
 
@@ -415,7 +415,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Undo last rollover',
             // 带条件的指令
             checkCallback: checking => {
-                console.log(this);
+                Logger.log(this);
                 // no history, don't allow undo
                 if (this.undoHistory.length > 0) {
                     const now = window.moment();
