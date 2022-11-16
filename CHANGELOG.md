@@ -1,3 +1,17 @@
+# [1.5.0](https://github.com/JuckZ/obsidian-manager/compare/v1.4.9...v1.5.0) (2022-11-16)
+
+
+### Bug Fixes
+
+* 1.hide方法执行时保存设置 ([8203dd1](https://github.com/JuckZ/obsidian-manager/commit/8203dd1fd5b8aa9403cd2fbe055d75b9413dbc5e))
+
+
+### Features
+
+* 1.add ui ([d148bbd](https://github.com/JuckZ/obsidian-manager/commit/d148bbd821c91312bf1990667131e41112fded0c))
+* 1.fix ts config ([fa7da60](https://github.com/JuckZ/obsidian-manager/commit/fa7da60ef49e0e3610272254a28099135252a544))
+* 1.obsidian manager beta ([2850711](https://github.com/JuckZ/obsidian-manager/commit/28507111d71b3bed0f205fb324a7c36c5337bf56))
+
 ## [1.4.9](https://github.com/JuckZ/obsidian-manager/compare/v1.4.8...v1.4.9) (2022-11-11)
 
 
