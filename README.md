@@ -11,8 +11,8 @@
   <a href="https://npmcharts.com/compare/obsidian-manager?minimal=true">
     <img src="https://img.shields.io/npm/dm/obsidian-manager.svg">
   </a>
-  <a href="https://codecov.io/gh/JuckZ/obsidian-manager" > 
-    <img src="https://codecov.io/gh/JuckZ/obsidian-manager/branch/master/graph/badge.svg?token=D6DI2HRC5Q"/> 
+  <a href="https://codecov.io/gh/JuckZ/obsidian-manager" >
+    <img src="https://codecov.io/gh/JuckZ/obsidian-manager/branch/master/graph/badge.svg?token=D6DI2HRC5Q"/>
   </a>
   <br>
 </p>
@@ -112,7 +112,7 @@ OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm run dev
 
 ## Test Report
 
-<img src="https://codecov.io/gh/JuckZ/obsidian-manager/branch/master/graphs/sunburst.svg?token=D6DI2HRC5Q"/> 
+<img src="https://codecov.io/gh/JuckZ/obsidian-manager/branch/master/graphs/sunburst.svg?token=D6DI2HRC5Q"/>
 
 ## Reference
 

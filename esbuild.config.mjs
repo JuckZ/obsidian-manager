@@ -1,5 +1,5 @@
-import esbuild from 'esbuild';
 import process from 'process';
+import esbuild from 'esbuild';
 import builtins from 'builtin-modules';
 import esbuildSvelte from 'esbuild-svelte';
 import sveltePreprocess from 'svelte-preprocess';
