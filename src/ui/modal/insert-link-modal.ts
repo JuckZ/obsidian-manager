@@ -1,4 +1,4 @@
-import { App, Modal, SuggestModal, FuzzySuggestModal, Setting, Notice } from 'obsidian';
+import { App, FuzzySuggestModal, Modal, Notice, Setting, SuggestModal } from 'obsidian';
 
 interface Book {
     title: string;
@@ -22,17 +22,17 @@ const ALL_BOOKS = [
 
 export class Example1Modal extends FuzzySuggestModal<Book> {
     getItems(): Book[] {
-      return ALL_BOOKS;
+        return ALL_BOOKS;
     }
-  
+
     getItemText(book: Book): string {
-      return book.title;
+        return book.title;
     }
-  
+
     onChooseItem(book: Book, evt: MouseEvent | KeyboardEvent) {
-      new Notice(`Selected ${book.title}`);
+        new Notice(`Selected ${book.title}`);
     }
-  }
+}
 
 export class Example2Modal extends SuggestModal<Book> {
     // Returns all available suggestions.
@@ -92,7 +92,7 @@ export class InsertLinkModal extends Modal {
     }
 
     onClose() {
-        let { contentEl } = this;
+        const { contentEl } = this;
         contentEl.empty();
     }
 }

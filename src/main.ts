@@ -1,26 +1,15 @@
-import {
-    App,
-    Menu,
-    Notice,
-    Plugin,
-    PluginManifest,
-    Editor,
-    TFile,
-    addIcon,
-    setIcon,
-    EditorPosition,
-    MarkdownView,
-} from 'obsidian';
+import type { EditorPosition, PluginManifest, WorkspaceLeaf } from 'obsidian';
+import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, addIcon, setIcon } from 'obsidian';
 import moment from 'moment';
 import axios from 'axios';
-import { getDailyNoteSettings, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
+import { getAllDailyNotes, getDailyNote, getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
 import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { InsertLinkModal, Example1Modal, Example2Modal } from 'ui/modal/insert-link-modal';
+import { Example1Modal, Example2Modal, InsertLinkModal } from 'ui/modal/insert-link-modal';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
 import { Emoji } from 'render/Emoji';
 import { ReminderModal } from 'ui/reminder';
@@ -32,11 +21,40 @@ interface PasteFunction {
     (this: HTMLElement, ev: ClipboardEvent): void;
 }
 
+class ExtApp extends App {
+    internalPlugins: any;
+    plugins: any;
+    commands: any;
+}
+
+class ExtTFile extends TFile {
+    override basename!: string;
+}
+
+class OneDay {
+    file!: TFile;
+    oldContent = '';
+
+    constructor(protected fileVal: TFile, protected oldContentVal: string) {
+        this.file = fileVal;
+        this.oldContent = oldContentVal;
+    }
+}
+class UndoHistoryInstance {
+    previousDay!: OneDay;
+    today!: OneDay;
+
+    constructor(protected previousDayVal: OneDay, protected todayVal: OneDay) {
+        this.previousDay = previousDayVal;
+        this.today = todayVal;
+    }
+}
+
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
 export default class ObsidianManagerPlugin extends Plugin {
+    override app: ExtApp;
     pluginDataIO: PluginDataIO;
-    // pasteFunction: PasteFunction;
     private undoHistory: any[];
     private undoHistoryTime: Date;
     private remindersController: RemindersController;
@@ -44,9 +62,11 @@ export default class ObsidianManagerPlugin extends Plugin {
     private reminderModal: ReminderModal;
     // private autoComplete: AutoComplete;
     private reminders: Reminders;
+    pasteFunction: (evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView) => any;
 
     constructor(app: App, manifest: PluginManifest) {
         super(app, manifest);
+        this.app = app as ExtApp;
         this.reminders = new Reminders(() => {
             this.pluginDataIO.changed = true;
         });
@@ -58,14 +78,14 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.editDetector = new EditDetector(SETTINGS.editDetectionSec);
         this.remindersController = new RemindersController(app.vault, this.reminders);
         this.reminderModal = new ReminderModal(this.app, SETTINGS.useSystemNotification, SETTINGS.laters);
-        console.warn(this.reminderModal)
+        // TODO 完善
+        this.pasteFunction = this.customizePaste.bind(this);
+        console.warn(this.reminderModal);
     }
 
     isDailyNotesEnabled() {
-        /* @ts-ignore */
         const dailyNotesPlugin = this.app.internalPlugins.plugins['daily-notes'];
         const dailyNotesEnabled = dailyNotesPlugin && dailyNotesPlugin.enabled;
-        /* @ts-ignore */
         const periodicNotesPlugin = this.app.plugins.getPlugin('periodic-notes');
         const periodicNotesEnabled = periodicNotesPlugin && periodicNotesPlugin.settings?.daily?.enabled;
 
@@ -79,12 +99,11 @@ export default class ObsidianManagerPlugin extends Plugin {
         const dailyNoteFiles = this.app.vault
             .getAllLoadedFiles()
             .filter(file => file.path.startsWith(folder))
-            /* @ts-ignore */
-            .filter(file => file.basename != null) as TFile[];
+            .filter(file => (file as ExtTFile).basename != null) as TFile[];
 
         // remove notes that are from the future
         const todayMoment = moment();
-        let dailyNotesTodayOrEarlier: TFile[] = [];
+        const dailyNotesTodayOrEarlier: TFile[] = [];
         dailyNoteFiles.forEach(file => {
             if (moment(file.basename, format).isSameOrBefore(todayMoment, 'day')) {
                 dailyNotesTodayOrEarlier.push(file);
@@ -95,7 +114,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         const sorted = dailyNotesTodayOrEarlier.sort(
             (a, b) => moment(b.basename, format).valueOf() - moment(a.basename, format).valueOf(),
         );
-        return sorted[1];
+        return sorted[1] as TFile;
     }
 
     async getAllUnfinishedTodos(file: TFile) {
@@ -163,28 +182,16 @@ export default class ObsidianManagerPlugin extends Plugin {
             //this.sortHeadersIntoHeirarchy(lastDailyNote)
 
             // get unfinished todos from yesterday, if exist
-            let todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
+            const todos_yesterday = await this.getAllUnfinishedTodos(lastDailyNote);
             if (todos_yesterday.length == 0) {
                 Logger.log(`rollover-daily-todos: 0 todos found in ${lastDailyNote.basename}.md`);
                 return;
             }
 
-            // setup undo history
-            let undoHistoryInstance = {
-                previousDay: {
-                    file: undefined,
-                    oldContent: '',
-                },
-                today: {
-                    file: undefined,
-                    oldContent: '',
-                },
-            };
-
             // Potentially filter todos from yesterday for today
             let todosAdded = 0;
             let emptiesToNotAddToTomorrow = 0;
-            let todos_today = !removeEmptyTodos.value ? todos_yesterday : [];
+            const todos_today = !removeEmptyTodos.value ? todos_yesterday : [];
             if (removeEmptyTodos.value) {
                 todos_yesterday.forEach((line, i) => {
                     const trimmedLine = (line || '').trim();
@@ -202,14 +209,10 @@ export default class ObsidianManagerPlugin extends Plugin {
             // get today's content and modify it
             let templateHeadingNotFoundMessage = '';
             const templateHeadingSelected = templateHeading.value !== 'none';
-
+            let today!: OneDay;
             if (todos_today.length > 0) {
                 let dailyNoteContent = await this.app.vault.read(file);
-                undoHistoryInstance.today = {
-                    /* @ts-ignore */
-                    file: file,
-                    oldContent: `${dailyNoteContent}`,
-                };
+                today = new OneDay(file, `${dailyNoteContent}`);
                 const todos_todayString = `\n${todos_today.join('\n')}`;
 
                 // If template heading is selected, try to rollover to template heading
@@ -233,15 +236,12 @@ export default class ObsidianManagerPlugin extends Plugin {
                 await this.app.vault.modify(file, dailyNoteContent);
             }
 
+            let previousDay!: OneDay;
             // if deleteOnComplete, get yesterday's content and modify it
             if (deleteOnComplete.value) {
-                let lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
-                undoHistoryInstance.previousDay = {
-                    /* @ts-ignore */
-                    file: lastDailyNote,
-                    oldContent: `${lastDailyNoteContent}`,
-                };
-                let lines = lastDailyNoteContent.split('\n');
+                const lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
+                previousDay = new OneDay(lastDailyNote, `${lastDailyNoteContent}`);
+                const lines = lastDailyNoteContent.split('\n');
 
                 for (let i = lines.length; i >= 0; i--) {
                     if (todos_yesterday.includes(lines[i])) {
@@ -266,8 +266,8 @@ export default class ObsidianManagerPlugin extends Plugin {
             const part2 = `${todosAddedString}${todosAddedString.length > 0 ? ' ' : ''}`;
             const part3 = `${emptiesToNotAddToTomorrowString}${emptiesToNotAddToTomorrowString.length > 0 ? ' ' : ''}`;
 
-            let allParts = [part1, part2, part3];
-            let nonBlankLines: string[] = [];
+            const allParts = [part1, part2, part3];
+            const nonBlankLines: string[] = [];
             allParts.forEach(part => {
                 if (part.length > 0) {
                     nonBlankLines.push(part);
@@ -279,7 +279,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                 new Notice(message, 4000 + message.length * 3);
             }
             this.undoHistoryTime = new Date();
-            this.undoHistory = [undoHistoryInstance];
+            this.undoHistory = [new UndoHistoryInstance(previousDay, today)];
         }
     }
 
@@ -290,12 +290,11 @@ export default class ObsidianManagerPlugin extends Plugin {
             type: VIEW_TYPE_EXAMPLE,
             active: true,
         });
-
-        this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE)[0]);
+        this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE)[0] as WorkspaceLeaf);
     }
 
     public static getEditorPositionFromIndex(content: string, index: number): EditorPosition {
-        let substr = content.substr(0, index);
+        const substr = content.substr(0, index);
 
         let l = 0;
         let offset = -1;
@@ -303,7 +302,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         for (; (r = substr.indexOf('\n', r + 1)) !== -1; l++, offset = r);
         offset += 1;
 
-        let ch = content.substr(offset, index - offset).length;
+        const ch = content.substr(offset, index - offset).length;
 
         return { line: l, ch: ch };
     }
@@ -311,15 +310,14 @@ export default class ObsidianManagerPlugin extends Plugin {
     async customizePaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
         Logger.warn(evt);
         Logger.dir(evt.clipboardData?.files);
-        let clipboardText = evt.clipboardData?.getData('text/plain') || 'xxx';
+        const clipboardText = evt.clipboardData?.getData('text/plain') || 'xxx';
         Logger.warn(clipboardText);
-        /* @ts-ignore */
         // evt.clipboardData?.setDragImage
-        await evt.clipboardData.setData('text/plain', 'Hello, world!');
+        await evt.clipboardData?.setData('text/plain', 'Hello, world!');
         // if (clipboardText == null || clipboardText == '') return;
         evt.stopPropagation();
         evt.preventDefault();
-        let newText = evt.clipboardData?.getData('text/plain') || 'lalala';
+        const newText = evt.clipboardData?.getData('text/plain') || 'lalala';
         const text = editor.getValue();
         const start = text.indexOf(clipboardText);
         if (start < 0) {
@@ -337,8 +335,6 @@ export default class ObsidianManagerPlugin extends Plugin {
     override async onload(): Promise<void> {
         this.setupUI();
         this.setupCommands();
-        // TODO 完善
-        // this.pasteFunction = this.customizePaste.bind(this);
         this.registerMarkdownPostProcessor((element, context) => {
             const codeblocks = element.querySelectorAll('code');
             for (let index = 0; index < codeblocks.length; index++) {
@@ -385,7 +381,6 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private async periodicTask(): Promise<void> {
-
         if (!this.pluginDataIO.scanned.value) {
             this.remindersController.reloadAllFiles().then(() => {
                 this.pluginDataIO.scanned.value = true;
@@ -417,7 +412,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                     }
                 }
                 this.showReminder(reminder);
-                console.log(reminder)
+                console.log(reminder);
                 previousReminder = reminder;
             }
         }
@@ -429,14 +424,14 @@ export default class ObsidianManagerPlugin extends Plugin {
      * @param milliseconds - The number of milliseconds to wait before resuming.
      */
     private async sleep(milliseconds: number): Promise<void> {
-        return new Promise((resolve) => setTimeout(resolve, milliseconds));
+        return new Promise(resolve => setTimeout(resolve, milliseconds));
     }
 
     private showReminder(reminder: Reminder) {
         reminder.muteNotification = true;
         this.reminderModal.show(
             reminder,
-            (time) => {
+            time => {
                 console.info('Remind me later: time=%o', time);
                 reminder.time = time;
                 reminder.muteNotification = false;
@@ -492,7 +487,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             id: 'obsidian-manager-sayHello1',
             name: 'Say Example1Modal',
             callback: () => {
-                const eve = (...args) => {
+                const eve = (...args: any[]) => {
                     Logger.warn(...args);
                 };
                 new Example1Modal(this.app).open();
@@ -550,7 +545,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.registerView(VIEW_TYPE_EXAMPLE, leaf => new ExampleView(leaf));
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
         // 自定义图标
-        addIcon('circle', `<circle cx="50" cy="50" r="50" fill="currentColor" />`);
+        addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 状态栏图标
         const item = this.addStatusBarItem();
         item.createEl('span', { text: 'Hello from the status bar 👋' });
@@ -606,8 +601,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             }),
             this.app.vault.on('create', async file => {
                 // TODO 增加开关，决定是否自动rollover
-                /* @ts-ignore */
-                // this.rollover(file);
+                // this.rollover(file as TFile);
             }),
             this.app.vault.on('modify', async file => {
                 this.remindersController.reloadFile(file, true);
@@ -618,19 +612,15 @@ export default class ObsidianManagerPlugin extends Plugin {
                 const todayFormatted = moment(today).format(format);
                 if (
                     file.name == todayFormatted + '.md' &&
-                    /* @ts-ignore */
                     this.app.commands.commands['obsidian-day-planner:app:unlink-day-planner-from-note']
                 ) {
-                    /* @ts-ignore */
                     this.app.commands.executeCommandById('obsidian-day-planner:app:unlink-day-planner-from-note');
                 }
-                /* @ts-ignore */
                 this.remindersController.removeFile(file.path);
             }),
             this.app.vault.on('rename', async (file, oldPath) => {
                 // We only reload the file if it CAN be deleted, otherwise this can
                 // cause crashes.
-                /* @ts-ignore */
                 if (await this.remindersController.removeFile(oldPath)) {
                     // We need to do the reload synchronously so as to avoid racing.
                     await this.remindersController.reloadFile(file);

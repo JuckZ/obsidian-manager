@@ -2,10 +2,10 @@ import type { ReadOnlyReference } from 'model/ref';
 import type { DateTime } from 'model/time';
 import { App, Modal } from 'obsidian';
 import { SETTINGS } from 'settings';
-import ReminderView from './components/Reminder.svelte';
+import electron from 'electron';
 import type { Reminder } from '../model/reminder';
 import type { Later } from '../model/time';
-const electron = require('electron');
+import ReminderView from './components/Reminder.svelte';
 
 export class ReminderModal {
     constructor(
@@ -49,7 +49,7 @@ export class ReminderModal {
                     onRemindMeLater(later.later());
                 });
                 const actions = [{ type: 'button', text: 'Mark as Done' }];
-                laters.forEach((later) => {
+                laters.forEach(later => {
                     actions.push({ type: 'button', text: later.label });
                 });
                 n.actions = actions as any;
@@ -90,7 +90,7 @@ export class ReminderModal {
 }
 
 class NotificationModal extends Modal {
-    canceled: boolean = true;
+    canceled = true;
 
     constructor(
         app: App,

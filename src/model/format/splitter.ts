@@ -3,14 +3,14 @@ export type Token = {
     text: string;
 };
 
-export class Symbol {
-    static ofChar(ch: string): Symbol {
-        return new Symbol(ch, text => {
+export class MySymbol {
+    static ofChar(ch: string): MySymbol {
+        return new MySymbol(ch, text => {
             return text === ch;
         });
     }
 
-    static ofChars(ch: Array<string>): Symbol {
+    static ofChars(ch: Array<string>): MySymbol {
         if (ch.length === 0) {
             throw 'empty symbol';
         }
@@ -20,14 +20,14 @@ export class Symbol {
         if (ch.length === 0) {
             return this.ofChar(ch[0]);
         }
-        return new Symbol(ch[0], text => {
+        return new MySymbol(ch[0], text => {
             return ch.filter(c => text === c).length > 0;
         });
     }
 
     private constructor(public primary: string, private func: (text: string) => boolean) {}
 
-    isSymbol(text: string) {
+    isMySymbol(text: string) {
         return this.func(text);
     }
 }
@@ -36,11 +36,11 @@ export class Tokens {
     constructor(private tokens: Array<Token>) {}
 
     public setTokenText(
-        symbol: Symbol | string,
+        symbol: MySymbol | string,
         text: string,
         keepSpace = false,
         create = false,
-        separateSymbolAndText = false,
+        separateMySymbolAndText = false,
         insertAt?: number,
     ): Token | null {
         let token = this.getToken(symbol);
@@ -49,12 +49,12 @@ export class Tokens {
                 return null;
             }
             // append new token
-            if (symbol instanceof Symbol) {
+            if (symbol instanceof MySymbol) {
                 token = { symbol: symbol.primary, text };
             } else {
                 token = { symbol, text };
             }
-            if (separateSymbolAndText && token.symbol !== '' && !token.text.startsWith(' ')) {
+            if (separateMySymbolAndText && token.symbol !== '' && !token.text.startsWith(' ')) {
                 token.text = ' ' + token.text;
             }
 
@@ -117,10 +117,10 @@ export class Tokens {
         return token.text.match(/^.*\s$/);
     }
 
-    public getToken(symbol: Symbol | string): Token | null {
-        for (let token of this.tokens) {
-            if (symbol instanceof Symbol) {
-                if (symbol.isSymbol(token.symbol)) {
+    public getToken(symbol: MySymbol | string): Token | null {
+        for (const token of this.tokens) {
+            if (symbol instanceof MySymbol) {
+                if (symbol.isMySymbol(token.symbol)) {
                     return token;
                 }
             } else {
@@ -132,7 +132,7 @@ export class Tokens {
         return null;
     }
 
-    public getTokenText(symbol: Symbol | string, removeSpace = false): string | null {
+    public getTokenText(symbol: MySymbol | string, removeSpace = false): string | null {
         const token = this.getToken(symbol);
         if (token === null) {
             return null;
@@ -140,22 +140,22 @@ export class Tokens {
         if (!removeSpace) {
             return token.text;
         }
-        return token.text.replace(/^\s*(.*?)\s*$/, `$1`);
+        return token.text.replace(/^\s*(.*?)\s*$/, '$1');
     }
 
-    public removeToken(symbol: Symbol) {
-        this.tokens = this.tokens.filter(token => !symbol.isSymbol(token.symbol));
+    public removeToken(symbol: MySymbol) {
+        this.tokens = this.tokens.filter(token => !symbol.isMySymbol(token.symbol));
     }
 
     forEachTokens(consumer: (token: Token) => void) {
         this.tokens.forEach(consumer);
     }
 
-    public rangeOfSymbol(symbol: Symbol): { start: number; end: number } | undefined {
+    public rangeOfSymbol(symbol: MySymbol): { start: number; end: number } | undefined {
         let index = 0;
         for (const token of this.tokens) {
             const end = index + token.symbol.length + token.text.length;
-            if (symbol.isSymbol(token.symbol)) {
+            if (symbol.isMySymbol(token.symbol)) {
                 return {
                     start: index,
                     end: end,
@@ -171,9 +171,9 @@ export class Tokens {
     }
 }
 
-export function splitBySymbol(line: string, symbols: Array<Symbol>): Array<Token> {
+export function splitBySymbol(line: string, symbols: Array<MySymbol>): Array<Token> {
     const chars = [...line];
-    let text: string = '';
+    let text = '';
     let currentToken: Token | null = null;
     const splitted: Array<Token> = [];
 
@@ -187,8 +187,8 @@ export function splitBySymbol(line: string, symbols: Array<Symbol>): Array<Token
         }
     };
     chars.forEach(c => {
-        let isSymbol = symbols.filter(s => s.isSymbol(c)).length > 0;
-        if (isSymbol) {
+        const isMySymbol = symbols.filter(s => s.isMySymbol(c)).length > 0;
+        if (isMySymbol) {
             fillPreviousToken();
 
             // new token

@@ -13,7 +13,7 @@ interface ReminderData {
 
 export class PluginDataIO {
     private restoring = true;
-    changed: boolean = false;
+    changed = false;
     public scanned: Reference<boolean> = new Reference(false);
     public debug: Reference<boolean> = new Reference(false);
 
@@ -68,8 +68,8 @@ export class PluginDataIO {
         }
     }
 
-    async save(force: boolean = false) {
-        Logger.warn('save exec')
+    async save(force = false) {
+        Logger.warn('save exec');
         if (!force && !this.changed) {
             return;
         }

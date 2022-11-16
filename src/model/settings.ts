@@ -1,5 +1,6 @@
-import { ReadOnlyReference, Reference } from 'model/ref';
-import { Later, parseLaters, Time } from 'model/time';
+import type { ReadOnlyReference } from 'model/ref';
+import { Reference } from 'model/ref';
+import { Later, Time, parseLaters } from 'model/time';
 import { AbstractTextComponent, Setting } from 'obsidian';
 import { ReminderFormatType, ReminderFormatTypes } from './format';
 

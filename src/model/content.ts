@@ -1,4 +1,4 @@
-import { MarkdownDocument, modifyReminder, parseReminder, ReminderEdit } from 'model/format';
+import { MarkdownDocument, ReminderEdit, modifyReminder, parseReminder } from 'model/format';
 import type { Reminder } from 'model/reminder';
 import type { Todo } from './format/markdown';
 
@@ -13,7 +13,7 @@ export class Content {
         this.doc = new MarkdownDocument(file, content);
     }
 
-    public getReminders(doneOnly: boolean = true): Array<Reminder> {
+    public getReminders(doneOnly = true): Array<Reminder> {
         const reminders = parseReminder(this.doc);
         if (!doneOnly) {
             return reminders;

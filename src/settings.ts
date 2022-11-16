@@ -1,32 +1,26 @@
 import {
-    changeReminderFormat,
-    kanbanPluginReminderFormat,
     ReminderFormatType,
     ReminderFormatTypes,
+    changeReminderFormat,
+    kanbanPluginReminderFormat,
     reminderPluginReminderFormat,
     setReminderFormatConfig,
     tasksPluginReminderFormat,
 } from 'model/format';
 import { ReminderFormatConfig, ReminderFormatParameterKey } from 'model/format/reminder-base';
-import {
-    LatersSerde,
-    RawSerde,
-    ReminderFormatTypeSerde,
-    SettingModel,
-    SettingTabModel,
-    TimeSerde,
-} from 'model/settings';
+import type { SettingModel } from 'model/settings';
+import { LatersSerde, RawSerde, ReminderFormatTypeSerde, SettingTabModel, TimeSerde } from 'model/settings';
 import { DateTime, Later, Time } from 'model/time';
-import { App, PluginSettingTab, Plugin_2, TAbstractFile } from 'obsidian';
-import { getDailyNoteSettings, IPeriodicNoteSettings } from 'obsidian-daily-notes-interface';
-import { PluginDataIO } from 'data';
+import { App, PluginSettingTab, Plugin_2, TAbstractFile, TFile } from 'obsidian';
+import { getDailyNoteSettings } from 'obsidian-daily-notes-interface';
+import type { PluginDataIO } from 'data';
 
 export const TAG_RESCAN = 're-scan';
 
 class Settings {
     settings: SettingTabModel = new SettingTabModel();
 
-    setRolloverTemplateHeadingOptionsHasBeenSet: boolean;
+    setRolloverTemplateHeadingOptionsHasBeenSet!: boolean;
     rolloverTemplateHeadingBuilder: any;
 
     reminderTime: SettingModel<string, Time>;
@@ -318,27 +312,27 @@ class ReminderFormatSettings {
 export const SETTINGS = new Settings();
 
 export class ReminderSettingTab extends PluginSettingTab {
-
     constructor(app: App, plugin: Plugin_2, protected pluginData: PluginDataIO) {
         super(app, plugin);
     }
 
     async getTemplateHeadings(): Promise<string[]> {
-        const { template } = getDailyNoteSettings()
+        const { template } = getDailyNoteSettings();
         if (!template) return [];
 
         let file: TAbstractFile | null = this.app.vault.getAbstractFileByPath(template);
         if (file == null) {
             file = this.app.vault.getAbstractFileByPath(template + '.md');
         }
-        /* @ts-ignore */
-        const templateContents: string = await this.app.vault.read(file);
-        const allHeadings: string[] = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(([heading]) => heading);
+        const templateContents: string = await this.app.vault.read(file as TFile);
+        const allHeadings: string[] = Array.from(templateContents.matchAll(/#{1,} .*/g)).map(
+            ([heading]) => heading as string,
+        );
         return allHeadings;
     }
 
     async display(): Promise<void> {
-        let { containerEl } = this;
+        const { containerEl } = this;
         // let ele1 = containerEl.createEl("h1", { text: "Heading 1" });
         // let ele2 = containerEl.createEl("div", { cls: "book" });
         // let ele3 = containerEl.createEl("div", { text: "How to Take Smart Notes", cls: "book__title" });
@@ -353,7 +347,7 @@ export class ReminderSettingTab extends PluginSettingTab {
         SETTINGS.settings.displayOn(containerEl);
     }
 
-    hide() {
-        this.pluginData.save()
+    override hide() {
+        this.pluginData.save();
     }
 }

@@ -1,7 +1,6 @@
 import jsonfile from 'jsonfile';
 import chalk from 'chalk';
-
-const sut = require('./file-access');
+import * as sut from './file-access';
 
 describe('file access', () => {
     beforeAll(() => (console.log = jest.fn()));

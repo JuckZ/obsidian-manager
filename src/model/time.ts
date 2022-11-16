@@ -93,10 +93,10 @@ export class Time {
         const hour = parseInt(s[0]!);
         const minute = parseInt(s[1]!);
         if (hour > 23 || hour < 0) {
-            throw `hour must be 0~23`;
+            throw 'hour must be 0~23';
         }
         if (minute > 59 || minute < 0) {
-            throw `minute must be 0~59`;
+            throw 'minute must be 0~59';
         }
         return new Time(hour, minute);
     }
@@ -199,7 +199,7 @@ export function parseLater(later: string): Later {
     if (later.startsWith('in')) {
         const tokens = later.split(' ');
         if (tokens.length !== 3) {
-            throw `Unsupported format.  Should be 'In N (minutes|hours)'`;
+            throw "Unsupported format.  Should be 'In N (minutes|hours)'";
         }
         const n = tokens[1] === 'a' || tokens[1] === 'an' ? 1 : parseInt(tokens[1]!);
         switch (tokens[2]) {

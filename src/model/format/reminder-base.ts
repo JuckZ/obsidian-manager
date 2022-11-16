@@ -48,8 +48,6 @@ type ReminderFormatParameterSource<T> = () => T;
 
 export class ReminderFormatConfig {
     private parameters: Map<string, ReminderFormatParameterSource<any>> = new Map();
-    constructor() {}
-
     /**
      * Set parameter for this format.
      *

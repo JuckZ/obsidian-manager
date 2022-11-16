@@ -1,7 +1,8 @@
 import { DateTime } from 'model/time';
 import moment from 'moment';
 import type { Todo } from './markdown';
-import { ReminderModel, TodoBasedReminderFormat } from './reminder-base';
+import type { ReminderModel } from './reminder-base';
+import { TodoBasedReminderFormat } from './reminder-base';
 import { escapeRegExpChars } from './util';
 
 type KanbanSettingType = {
@@ -98,7 +99,6 @@ export class KanbanDateTimeFormat {
 
     split(text: string, strictDateFormat?: boolean): KanbanSplitResult {
         const originalText = text;
-        let title: string;
         let date: string;
         let time: string | undefined;
 
@@ -115,7 +115,7 @@ export class KanbanDateTimeFormat {
             time = timeMatch.groups!['time']!;
             text = text.replace(this.timeRegExp, '');
         }
-        title = text.trim();
+        const title = text.trim();
 
         let parsedTime: DateTime;
         const strict = strictDateFormat ?? true;

@@ -1,27 +1,27 @@
-import { MarkdownRenderChild } from "obsidian";
+import { MarkdownRenderChild } from 'obsidian';
 
 // highlight-next-line
 export class Emoji extends MarkdownRenderChild {
-  static ALL_EMOJIS: Record<string, string> = {
-    ":+1:": "👍",
-    ":sunglasses:": "😎",
-    ":smile:": "😄",
-  };
+    static ALL_EMOJIS: Record<string, string> = {
+        ':+1:': '👍',
+        ':sunglasses:': '😎',
+        ':smile:': '😄',
+    };
 
-  text: string;
+    text: string;
 
-  constructor(containerEl: HTMLElement, text: string) {
-    super(containerEl);
+    constructor(containerEl: HTMLElement, text: string) {
+        super(containerEl);
 
-    this.text = text;
-  }
+        this.text = text;
+    }
 
-  onload() {
-    // highlight-start
-    const emojiEl = this.containerEl.createSpan({
-      text: Emoji.ALL_EMOJIS[this.text] ?? this.text,
-    });
-    this.containerEl.replaceWith(emojiEl);
-    // highlight-end
-  }
+    onload() {
+        // highlight-start
+        const emojiEl = this.containerEl.createSpan({
+            text: Emoji.ALL_EMOJIS[this.text] ?? this.text,
+        });
+        this.containerEl.replaceWith(emojiEl);
+        // highlight-end
+    }
 }

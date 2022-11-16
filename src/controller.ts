@@ -1,7 +1,7 @@
 import { MarkdownView, TAbstractFile, TFile, Vault, WorkspaceLeaf } from 'obsidian';
 
 import { Content } from 'model/content';
-import type { Reminders, Reminder } from 'model/reminder';
+import type { Reminder, Reminders } from 'model/reminder';
 
 export class RemindersController {
     constructor(private vault: Vault, private reminders: Reminders) {}
@@ -61,7 +61,7 @@ export class RemindersController {
         return result;
     }
 
-    async reloadFile(file: TAbstractFile, reloadUI: boolean = false) {
+    async reloadFile(file: TAbstractFile, reloadUI = false) {
         console.debug('Reload file and collect reminders: file=%s, forceReloadUI=%s', file.path, reloadUI);
         if (!(file instanceof TFile)) {
             console.debug('Cannot read file other than TFile: file=%o', file);

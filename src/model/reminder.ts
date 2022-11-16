@@ -3,7 +3,7 @@ import { DateTime, Time } from 'model/time';
 
 export class Reminder {
     // To avoid duplicate notification, set this flag true before notification and set false on notification done.
-    public muteNotification: boolean = false;
+    public muteNotification = false;
 
     /* Given that `muteNotification` above is playing double duty, we need a flag
      * that lets us serialize reminder display to prevent overload problems on
@@ -12,7 +12,7 @@ export class Reminder {
      * It should be set to `true` before the reminder is displayed, and then set
      * to false once the reminder is dealt with.
      */
-    public beingDisplayed: boolean = false;
+    public beingDisplayed = false;
 
     constructor(
         public file: string,
@@ -36,12 +36,12 @@ export class Reminder {
     }
 
     public getFileName(): string {
-        const p = this.file.split(/[\/\\]/);
+        const p = this.file.split(/[/\\]/);
         return p[p.length - 1]!.replace(/^(.*?)(\..+)?$/, '$1');
     }
 
     static extractFileName(path: string) {
-        const p = path.split(/[\/\\]/);
+        const p = path.split(/[/\\]/);
         return p[p.length - 1]!.replace(/^(.*?)(\..+)?$/, '$1');
     }
 }
@@ -189,8 +189,8 @@ function generateGroup(time: DateTime, now: DateTime, reminderTime: Time) {
 }
 
 class Group {
-    public isToday: boolean = false;
-    public isOverdue: boolean = false;
+    public isToday = false;
+    public isOverdue = false;
     constructor(public name: string, private timeToStringFunc: (time: DateTime) => string) {}
 
     timeToString(time: DateTime): string {

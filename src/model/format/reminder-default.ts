@@ -1,4 +1,4 @@
-import { DateTime, DATE_TIME_FORMATTER } from 'model/time';
+import { DATE_TIME_FORMATTER, DateTime } from 'model/time';
 import type { Todo } from './markdown';
 import { ReminderFormatParameterKey, ReminderModel, TodoBasedReminderFormat } from './reminder-base';
 
@@ -50,12 +50,12 @@ class DefaultReminderModel implements ReminderModel {
         return this.toMarkdown().length - this.title2.length;
     }
     toMarkdown(): string {
-        let result = `${this.title1}(@${this.time})${this.title2}`;
+        const result = `${this.title1}(@${this.time})${this.title2}`;
         if (!this.linkDatesToDailyNotes) {
             return result;
         }
 
-        let time = DATE_TIME_FORMATTER.parse(this.time);
+        const time = DATE_TIME_FORMATTER.parse(this.time);
         if (!time) {
             return result;
         }
