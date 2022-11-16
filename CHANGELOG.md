@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/JuckZ/obsidian-manager/compare/v1.5.0...v1.6.0) (2022-11-16)
+
+
+### Features
+
+* 1.增加自定义标签demo版 ([5ec67b2](https://github.com/JuckZ/obsidian-manager/commit/5ec67b2ba5dd3fdb2f8304fb89b71fd8a0b23e54))
+
 # [1.5.0](https://github.com/JuckZ/obsidian-manager/compare/v1.4.9...v1.5.0) (2022-11-16)
 
 
