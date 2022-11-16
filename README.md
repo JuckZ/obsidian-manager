@@ -56,10 +56,11 @@ But to our plugin:
 ## Roadmap
 
 - [ ] demo.gif (showcase)
+- [ ] colorful tag(Refer to the todo tree plugin of vscode)
+- [ ] random background (speed up) [Coming soon~]
 - [ ] image auto upload to aliyun oss and so on [Coming soon~]
 - [ ] bigfile auto upload to aliyun oss and so on [Coming soon~]
 - [ ] better spaced repetition
-- [ ] random background (speed up) [Coming soon~]
 - [ ] better notification (mobile and desktop)
   - [x] [ntfy](https://ntfy.sh/docs/) support [beta], with it you can get notification on every platform.
 - [ ] Function switch
@@ -72,6 +73,8 @@ But to our plugin:
   - [ ] others
 - [ ] path converter. (for typora user who use relative path like "./xxx/xxx.ext" other than "xxx/xxx.ext" in Obsidian)
 - [ ] attachment path convert to full relative path
+- [ ] More beautiful day planner
+  - [ ] support preview doc in timeline
 - [ ] others
   - [ ] auto update manifest.json
   - [ ] test v1
