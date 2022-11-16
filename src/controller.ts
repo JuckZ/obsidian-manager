@@ -14,6 +14,13 @@ export class RemindersController {
         }
     }
 
+    async removeFile(path: string): Promise<boolean> {
+        console.debug('Remove file: path=%s', path);
+        const result = this.reminders.removeFile(path);
+        // this.reloadUI();
+        return result;
+    }
+
     async reloadFile(file: TAbstractFile, reloadUI: boolean = false) {
         console.debug('Reload file and collect reminders: file=%s, forceReloadUI=%s', file.path, reloadUI);
         if (!(file instanceof TFile)) {

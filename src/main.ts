@@ -9,11 +9,11 @@ import {
     addIcon,
     setIcon,
     EditorPosition,
-    MarkdownView
+    MarkdownView,
 } from 'obsidian';
 import moment from 'moment';
 import axios from 'axios';
-import { getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
+import { getDailyNoteSettings, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
 import { Reminders } from 'model/reminder';
@@ -64,7 +64,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     getLastDailyNote(): TFile {
-        const { folder = '', format } = SETTINGS.periodicNoteSetting;
+        const { folder = '', format } = getDailyNoteSettings();
 
         // get all notes in directory that aren't null
         const dailyNoteFiles = this.app.vault
@@ -116,14 +116,13 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     async rollover(file: TFile | undefined) {
         /*** First we check if the file created is actually a valid daily note ***/
-        const { folder = '', format } = SETTINGS.periodicNoteSetting;
-        Logger.log('-=-=-=-=');
+        const { folder = '', format } = getDailyNoteSettings();
         let ignoreCreationTime = false;
 
         // Rollover can be called, but we need to get the daily file
         if (file == undefined) {
             const allDailyNotes = getAllDailyNotes();
-            file = getDailyNote(window.moment(), allDailyNotes);
+            file = getDailyNote(moment(), allDailyNotes);
             ignoreCreationTime = true;
         }
         if (!file) return;
@@ -133,7 +132,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
         // is today's daily note
         const today = new Date();
-        const todayFormatted = window.moment(today).format(format);
+        const todayFormatted = moment(today).format(format);
         if (todayFormatted !== file.basename) return;
 
         // was just created
@@ -147,7 +146,6 @@ export default class ObsidianManagerPlugin extends Plugin {
             );
         } else {
             const { templateHeading, deleteOnComplete, removeEmptyTodos } = SETTINGS;
-            Logger.warn(templateHeading.rawValue.value);
             // check if there is a daily note from yesterday
             const lastDailyNote = this.getLastDailyNote();
             if (lastDailyNote == null) return;
@@ -177,8 +175,8 @@ export default class ObsidianManagerPlugin extends Plugin {
             // Potentially filter todos from yesterday for today
             let todosAdded = 0;
             let emptiesToNotAddToTomorrow = 0;
-            let todos_today = !removeEmptyTodos ? todos_yesterday : [];
-            if (removeEmptyTodos) {
+            let todos_today = !removeEmptyTodos.value ? todos_yesterday : [];
+            if (removeEmptyTodos.value) {
                 todos_yesterday.forEach((line, i) => {
                     const trimmedLine = (line || '').trim();
                     if (trimmedLine != '- [ ]' && trimmedLine != '- [  ]') {
@@ -194,7 +192,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
             // get today's content and modify it
             let templateHeadingNotFoundMessage = '';
-            const templateHeadingSelected = templateHeading.rawValue.value !== 'none';
+            const templateHeadingSelected = templateHeading.value !== 'none';
 
             if (todos_today.length > 0) {
                 let dailyNoteContent = await this.app.vault.read(file);
@@ -209,7 +207,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                 if (templateHeadingSelected) {
                     const contentAddedToHeading = dailyNoteContent.replace(
                         templateHeading.value,
-                        `${templateHeading}${todos_todayString}`,
+                        `${templateHeading.value}${todos_todayString}`,
                     );
                     if (contentAddedToHeading == dailyNoteContent) {
                         templateHeadingNotFoundMessage = `Rollover couldn't find '${templateHeading.value}' in today's daily not. Rolling todos to end of file.`;
@@ -227,7 +225,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             }
 
             // if deleteOnComplete, get yesterday's content and modify it
-            if (deleteOnComplete) {
+            if (deleteOnComplete.value) {
                 let lastDailyNoteContent = await this.app.vault.read(lastDailyNote);
                 undoHistoryInstance.previousDay = {
                     /* @ts-ignore */
@@ -252,7 +250,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             const emptiesToNotAddToTomorrowString =
                 emptiesToNotAddToTomorrow == 0
                     ? ''
-                    : deleteOnComplete
+                    : deleteOnComplete.value
                     ? `- ${emptiesToNotAddToTomorrow} empty todo${emptiesToNotAddToTomorrow > 1 ? 's' : ''} removed.`
                     : '';
             const part1 = templateHeadingNotFoundMessage.length > 0 ? `${templateHeadingNotFoundMessage}` : '';
@@ -321,7 +319,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             const end = start + clipboardText.length;
             const startPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, start);
             const endPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, end);
-            Logger.warn(newText)
+            Logger.warn(newText);
             editor.replaceRange(newText, startPos, endPos);
             return;
         }
@@ -415,11 +413,10 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Undo last rollover',
             // 带条件的指令
             checkCallback: checking => {
-                Logger.log(this);
                 // no history, don't allow undo
                 if (this.undoHistory.length > 0) {
-                    const now = window.moment();
-                    const lastUse = window.moment(this.undoHistoryTime);
+                    const now = moment();
+                    const lastUse = moment(this.undoHistoryTime);
                     const diff = now.diff(lastUse, 'seconds');
                     // 2+ mins since use: don't allow undo
                     if (diff > 2 * 60) {
@@ -494,13 +491,25 @@ export default class ObsidianManagerPlugin extends Plugin {
                 });
             }),
             this.app.vault.on('create', async file => {
+                // TODO 增加开关，决定是否自动rollover
                 /* @ts-ignore */
-                this.rollover(file);
+                // this.rollover(file);
             }),
             this.app.vault.on('modify', async file => {
                 this.remindersController.reloadFile(file, true);
             }),
             this.app.vault.on('delete', file => {
+                const { format } = getDailyNoteSettings();
+                const today = new Date();
+                const todayFormatted = moment(today).format(format);
+                if (
+                    file.name == todayFormatted + '.md' &&
+                    /* @ts-ignore */
+                    this.app.commands.commands['obsidian-day-planner:app:unlink-day-planner-from-note']
+                ) {
+                    /* @ts-ignore */
+                    this.app.commands.executeCommandById('obsidian-day-planner:app:unlink-day-planner-from-note');
+                }
                 /* @ts-ignore */
                 this.remindersController.removeFile(file.path);
             }),
