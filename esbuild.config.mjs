@@ -1,8 +1,10 @@
-import esbuild from "esbuild";
-import process from "process";
-import builtins from "builtin-modules";
-import { config } from "dotenv";
-import { sassPlugin } from "esbuild-sass-plugin";
+import esbuild from 'esbuild';
+import process from 'process';
+import builtins from 'builtin-modules';
+import esbuildSvelte from 'esbuild-svelte';
+import sveltePreprocess from 'svelte-preprocess';
+import { config } from 'dotenv';
+import { sassPlugin } from 'esbuild-sass-plugin';
 
 config();
 
@@ -12,44 +14,45 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-const prod = process.argv[2] === "production";
+const prod = process.argv[2] === 'production';
 
-const dir = process.env.OUTDIR ? process.env.OUTDIR : "dest";
+const dir = process.env.OUTDIR ? process.env.OUTDIR : 'dest';
 
 esbuild
-	.build({
-		banner: {
-			js: banner,
-		},
-		entryPoints: [
-			"src/main.ts",
-			"src/styles.css",
-			"src/bin/order.bin.ts"
-		],
-		bundle: true,
-		external: [
-			"obsidian",
-			"electron",
-			"@codemirror/autocomplete",
-			"@codemirror/collab",
-			"@codemirror/commands",
-			"@codemirror/language",
-			"@codemirror/lint",
-			"@codemirror/search",
-			"@codemirror/state",
-			"@codemirror/view",
-			"@lezer/common",
-			"@lezer/highlight",
-			"@lezer/lr",
-			...builtins,
-		],
-		format: "cjs",
-		watch: !prod,
-		target: "es2018",
-		logLevel: "info",
-		sourcemap: prod ? false : "inline",
-		treeShaking: true,
-		outdir: dir,
-		plugins: [sassPlugin()],
-	})
-	.catch(() => process.exit(1));
+    .build({
+        banner: {
+            js: banner,
+        },
+        entryPoints: ['src/main.ts', 'src/styles.css', 'src/bin/order.bin.ts'],
+        bundle: true,
+        external: [
+            'obsidian',
+            'electron',
+            '@codemirror/autocomplete',
+            '@codemirror/collab',
+            '@codemirror/commands',
+            '@codemirror/language',
+            '@codemirror/lint',
+            '@codemirror/search',
+            '@codemirror/state',
+            '@codemirror/view',
+            '@lezer/common',
+            '@lezer/highlight',
+            '@lezer/lr',
+            ...builtins,
+        ],
+        format: 'cjs',
+        watch: !prod,
+        target: 'es2018',
+        logLevel: 'info',
+        sourcemap: prod ? false : 'inline',
+        treeShaking: true,
+        outdir: dir,
+        plugins: [
+            esbuildSvelte({
+                preprocess: sveltePreprocess(),
+            }),
+            sassPlugin(),
+        ],
+    })
+    .catch(() => process.exit(1));

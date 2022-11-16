@@ -16,15 +16,18 @@ import axios from 'axios';
 import { getDailyNoteSettings, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
-import { Reminders } from 'model/reminder';
+import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
 import { InsertLinkModal, Example1Modal, Example2Modal } from 'ui/modal/insert-link-modal';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
 import { Emoji } from 'render/Emoji';
+import { ReminderModal } from 'ui/reminder';
+// import { AutoComplete } from 'ui/autocomplete';
 import Logger from 'utils/logger';
 
+import type { ReadOnlyReference } from 'model/ref';
 interface PasteFunction {
     (this: HTMLElement, ev: ClipboardEvent): void;
 }
@@ -33,10 +36,13 @@ const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
 export default class ObsidianManagerPlugin extends Plugin {
     pluginDataIO: PluginDataIO;
-    pasteFunction: PasteFunction;
+    // pasteFunction: PasteFunction;
     private undoHistory: any[];
     private undoHistoryTime: Date;
     private remindersController: RemindersController;
+    private editDetector: EditDetector;
+    private reminderModal: ReminderModal;
+    // private autoComplete: AutoComplete;
     private reminders: Reminders;
 
     constructor(app: App, manifest: PluginManifest) {
@@ -49,7 +55,10 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.pluginDataIO = new PluginDataIO(this, this.reminders);
         this.reminders.reminderTime = SETTINGS.reminderTime;
         DATE_TIME_FORMATTER.setTimeFormat(SETTINGS.dateFormat, SETTINGS.dateTimeFormat, SETTINGS.strictDateFormat);
+        this.editDetector = new EditDetector(SETTINGS.editDetectionSec);
         this.remindersController = new RemindersController(app.vault, this.reminders);
+        this.reminderModal = new ReminderModal(this.app, SETTINGS.useSystemNotification, SETTINGS.laters);
+        console.warn(this.reminderModal)
     }
 
     isDailyNotesEnabled() {
@@ -349,7 +358,112 @@ export default class ObsidianManagerPlugin extends Plugin {
                 monkeyPatchConsole(this);
             }
             this.watchVault();
+            this.startPeriodicTask();
         });
+    }
+
+    private startPeriodicTask() {
+        let intervalTaskRunning = true;
+        // Force the view to refresh as soon as possible.
+        this.periodicTask().finally(() => {
+            intervalTaskRunning = false;
+        });
+
+        // Set up the recurring check for reminders.
+        this.registerInterval(
+            window.setInterval(() => {
+                if (intervalTaskRunning) {
+                    console.log('Skip reminder interval task because task is already running.');
+                    return;
+                }
+                intervalTaskRunning = true;
+                this.periodicTask().finally(() => {
+                    intervalTaskRunning = false;
+                });
+            }, SETTINGS.reminderCheckIntervalSec.value * 1000),
+        );
+    }
+
+    private async periodicTask(): Promise<void> {
+
+        if (!this.pluginDataIO.scanned.value) {
+            this.remindersController.reloadAllFiles().then(() => {
+                this.pluginDataIO.scanned.value = true;
+                this.pluginDataIO.save();
+            });
+        }
+
+        this.pluginDataIO.save(false);
+
+        if (this.editDetector.isEditing()) {
+            return;
+        }
+        const expired = this.reminders.getExpiredReminders(SETTINGS.reminderTime.value);
+
+        let previousReminder: Reminder | undefined = undefined;
+        for (const reminder of expired) {
+            if (this.app.workspace.layoutReady) {
+                if (reminder.muteNotification) {
+                    // We don't want to set `previousReminder` in this case as the current
+                    // reminder won't be shown.
+                    continue;
+                }
+                if (previousReminder) {
+                    while (previousReminder.beingDisplayed) {
+                        // Displaying too many reminders at once can cause crashes on
+                        // mobile. We use `beingDisplayed` to wait for the current modal to
+                        // be dismissed before displaying the next.
+                        await this.sleep(100);
+                    }
+                }
+                this.showReminder(reminder);
+                console.log(reminder)
+                previousReminder = reminder;
+            }
+        }
+    }
+
+    /* An asynchronous sleep function. To use it you must `await` as it hands
+     * off control to other portions of the JS control loop whilst waiting.
+     *
+     * @param milliseconds - The number of milliseconds to wait before resuming.
+     */
+    private async sleep(milliseconds: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, milliseconds));
+    }
+
+    private showReminder(reminder: Reminder) {
+        reminder.muteNotification = true;
+        this.reminderModal.show(
+            reminder,
+            (time) => {
+                console.info('Remind me later: time=%o', time);
+                reminder.time = time;
+                reminder.muteNotification = false;
+                this.remindersController.updateReminder(reminder, false);
+                this.pluginDataIO.save(true);
+            },
+            () => {
+                console.info('done');
+                reminder.muteNotification = false;
+                this.remindersController.updateReminder(reminder, true);
+                this.reminders.removeReminder(reminder);
+                this.pluginDataIO.save(true);
+            },
+            () => {
+                console.info('Mute');
+                reminder.muteNotification = true;
+            },
+            () => {
+                console.info('Open');
+                this.openReminderFile(reminder);
+            },
+        );
+    }
+
+    private async openReminderFile(reminder: Reminder) {
+        const leaf = this.app.workspace.getUnpinnedLeaf();
+        await this.remindersController.openReminder(reminder, leaf);
     }
 
     override async onunload(): Promise<void> {
@@ -525,5 +639,26 @@ export default class ObsidianManagerPlugin extends Plugin {
         ].forEach(eventRef => {
             this.registerEvent(eventRef);
         });
+    }
+}
+
+class EditDetector {
+    private lastModified?: Date;
+
+    constructor(private editDetectionSec: ReadOnlyReference<number>) {}
+
+    fileChanged() {
+        this.lastModified = new Date();
+    }
+
+    isEditing(): boolean {
+        if (this.editDetectionSec.value <= 0) {
+            return false;
+        }
+        if (this.lastModified == null) {
+            return false;
+        }
+        const elapsedSec = (new Date().getTime() - this.lastModified.getTime()) / 1000;
+        return elapsedSec < this.editDetectionSec.value;
     }
 }

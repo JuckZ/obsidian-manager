@@ -6,6 +6,46 @@ import type { Reminders, Reminder } from 'model/reminder';
 export class RemindersController {
     constructor(private vault: Vault, private reminders: Reminders) {}
 
+    async openReminder(reminder: Reminder, leaf: WorkspaceLeaf) {
+        console.log('Open reminder: ', reminder);
+        const file = this.vault.getAbstractFileByPath(reminder.file);
+        if (!(file instanceof TFile)) {
+            console.error("Cannot open file because it isn't a TFile: %o", file);
+            return;
+        }
+
+        // Open the reminder file and select the reminder
+        await leaf.openFile(file);
+        if (!(leaf.view instanceof MarkdownView)) {
+            return;
+        }
+        const line = leaf.view.editor.getLine(reminder.rowNumber);
+        leaf.view.editor.setSelection(
+            {
+                line: reminder.rowNumber,
+                ch: 0,
+            },
+            {
+                line: reminder.rowNumber,
+                ch: line.length,
+            },
+        );
+    }
+
+    async updateReminder(reminder: Reminder, checked: boolean) {
+        const file = this.vault.getAbstractFileByPath(reminder.file);
+        if (!(file instanceof TFile)) {
+            console.error('file is not instance of TFile: %o', file);
+            return;
+        }
+        const content = new Content(file.path, await this.vault.read(file));
+        await content.updateReminder(reminder, {
+            checked,
+            time: reminder.time,
+        });
+        await this.vault.modify(file, content.getContent());
+    }
+
     async reloadAllFiles() {
         console.debug('Reload all files and collect reminders');
         this.reminders.clear();
