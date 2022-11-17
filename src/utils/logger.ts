@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 chalk.level = 3;
 
+// TODO 溯源，显示调用处
 const printer = (args, chalkify) => {
     if (args.length === 0) throw '::::::error::::: no argument supplied to logger';
 

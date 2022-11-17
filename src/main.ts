@@ -1,7 +1,8 @@
 import type { EditorPosition, PluginManifest, WorkspaceLeaf } from 'obsidian';
 import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, addIcon, setIcon } from 'obsidian';
 import moment from 'moment';
-import axios from 'axios';
+import type { ExtApp, ExtTFile } from 'types';
+import { EditDetector, OneDay, Tag, UndoHistoryInstance } from 'types';
 import { getAllDailyNotes, getDailyNote, getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
@@ -15,65 +16,7 @@ import { Emoji } from 'render/Emoji';
 import { ReminderModal } from 'ui/reminder';
 // import { AutoComplete } from 'ui/autocomplete';
 import Logger from 'utils/logger';
-
-import type { ReadOnlyReference } from 'model/ref';
-interface PasteFunction {
-    (this: HTMLElement, ev: ClipboardEvent): void;
-}
-
-class ExtApp extends App {
-    internalPlugins: any;
-    plugins: any;
-    commands: any;
-    customCss: {
-        getSnippetPath(file: string): string;
-        readSnippets(): void;
-        setCssEnabledStatus(snippet: string, enabled: boolean): void;
-    };
-}
-
-class ExtTFile extends TFile {
-    override basename!: string;
-}
-
-class OneDay {
-    file!: TFile;
-    oldContent = '';
-
-    constructor(protected fileVal: TFile, protected oldContentVal: string) {
-        this.file = fileVal;
-        this.oldContent = oldContentVal;
-    }
-}
-
-class UndoHistoryInstance {
-    previousDay!: OneDay;
-    today!: OneDay;
-
-    constructor(protected previousDayVal: OneDay, protected todayVal: OneDay) {
-        this.previousDay = previousDayVal;
-        this.today = todayVal;
-    }
-}
-
-class Tag {
-    color = 'var(--white)';
-    bgColor: string;
-    type: string;
-    icon: {
-        name: string;
-    };
-    font: {
-        fontFamily: 'var(--font-family-special-tag)';
-    };
-    constructor(colorVal: string, bgColorVal: string, typeVal: string, iconVal, fontVal) {
-        this.color = colorVal;
-        this.bgColor = bgColorVal;
-        this.type = typeVal;
-        this.icon = iconVal;
-        this.font = fontVal;
-    }
-}
+import { notify } from 'utils/request';
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
 
@@ -117,22 +60,63 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     addTag(tag: Tag) {
         if (!tag) return;
-        const rule = `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) .cm-formatting.cm-formatting-hashtag.cm-hashtag.cm-hashtag-begin.cm-meta.cm-tag-${tag.type} {
-    background-color: ${tag.bgColor} !important;
-    font-weight: 600;
-    font-family: ${tag.font.fontFamily} !important;
-    display: inline;
-    color: ${tag.color} !important;
-    --callout-icon: ${tag.icon.name};  /* Icon name from the Obsidian Icon Set */
-}`;
-        console.log(rule);
-        this.style.sheet?.insertRule(rule, this.style.sheet.cssRules.length);
+        const rules = [
+            `body.tag-pill-outlined .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-hashtag.cm-meta.cm-hashtag-end:is(.cm-tag-important,.cm-tag-complete,.cm-tag-ideas,.cm-tag-${tag.type},.cm-tag-weeklynote,.cm-tag-dailynote,.cm-tag-inprogress):not(.cm-formatting-hashtag) {
+                border-top: var(--tag-border-width) solid var(--tag1);
+                border-bottom: var(--tag-border-width) solid var(--tag1);
+            }`,
+            `body:not(.tag-default) .tag[href ^="#${tag.type}"]:not(.token) {
+                background-color: var(--tag-${tag.type}-bg) !important;
+                font-weight: 600;
+                font-family: ${tag.font.fontFamily} !important;
+                color: ${tag.color} !important;
+                filter: hue-rotate(0) !important;
+            }`,
+            `body:not(.tag-default) .tag[href^="#${tag.type}"]::after {
+                content: ' ❓';
+                font-size: var(--font-size-emoji-after-tag);
+            }`,
+            `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-tag-${tag.type}:not(.cm-formatting-hashtag)::after {
+                content: ' ❓';
+            }`,
+            `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-hashtag.cm-meta.cm-hashtag-end.cm-tag-${tag.type}:not(.cm-formatting-hashtag) {
+                font-family: ${tag.font.fontFamily} !important;
+                font-weight: 600;
+                background-color: ${tag.bgColor} !important;
+                color: ${tag.color} !important;
+                font-size: ${tag.font.size};
+                filter: hue-rotate(0) !important;
+            }`,
+            `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) .cm-formatting.cm-formatting-hashtag.cm-hashtag.cm-hashtag-begin.cm-meta.cm-tag-${tag.type} {
+                font-weight: 600;
+                font-family: ${tag.font.fontFamily} !important;
+                display: inline;
+                color: ${tag.color} !important;
+                background-color: ${tag.bgColor} !important;
+                filter: hue-rotate(0) !important;
+                --callout-icon: ${tag.icon.name};  /* Icon name from the Obsidian Icon Set */
+            }`,
+        ];
+        rules.forEach(rule => this.style.sheet?.insertRule(rule, this.style.sheet.cssRules.length));
         this.updateSnippet();
     }
 
     generateCssString() {
         const sheet = [
             `/* This snippet was auto-generated by the Obsidian-manager plugin on ${new Date().toLocaleString()} */\n\n`,
+            `
+            body {
+                --tag-border-width: 1px;
+                --font-size-tag: 0.85em;
+                --tag-questions: #d4bdff;
+                --tag-questions-bg: #6640ae;
+                --tag1: #3674bb;
+                --stag1-bg: #bd1919;
+                --white: white;
+                --font-family-special-tag: "Lucida Handwriting", "Segoe UI Emoji";
+                --font-size-emoji-after-tag: 1.5625em;
+            }\n\n
+            `,
         ];
 
         for (const rule of Array.from(this.style.sheet!.cssRules)) {
@@ -156,7 +140,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         const dailyNotesPlugin = this.app.internalPlugins.plugins['daily-notes'];
         const dailyNotesEnabled = dailyNotesPlugin && dailyNotesPlugin.enabled;
         const periodicNotesPlugin = this.app.plugins.getPlugin('periodic-notes');
-        const periodicNotesEnabled = periodicNotesPlugin && periodicNotesPlugin.settings?.daily?.enabled;
+        const periodicNotesEnabled = periodicNotesPlugin && periodicNotesPlugin!.settings?.daily?.enabled;
 
         return dailyNotesEnabled || periodicNotesEnabled;
     }
@@ -204,12 +188,16 @@ export default class ObsidianManagerPlugin extends Plugin {
         }
     }
 
+    async addMyTag() {
+        this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
+    }
+
     async sayHello() {
         // await this.remindersController.reloadAllFiles();
         // this.pluginDataIO.scanned.value = true;
         // this.pluginDataIO.save();
         // const expired = this.reminders.getExpiredReminders(SETTINGS.reminderTime.value);
-        this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
+        notify('test', {});
     }
 
     async rollover(file: TFile | undefined) {
@@ -569,19 +557,19 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
 
         this.addCommand({
+            id: 'obsidian-manager-addMyTag',
+            name: 'Add MyTag',
+            callback: () => {
+                this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
+            },
+        });
+
+        this.addCommand({
             id: 'obsidian-manager-sayHello',
             name: 'Say Hello',
             hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'a' }],
             callback: () => {
                 this.sayHello();
-                // TODO 读取配置，防止泄露密码
-                // axios
-                //     .post('https://ntfy.ihave.cool/test', 'Look ma, with auth', {
-                //         headers: {
-                //             Authorization: 'Basic xxx',
-                //         },
-                //     })
-                //     .then(res => Logger.log(res));
             },
         });
 
@@ -703,26 +691,5 @@ export default class ObsidianManagerPlugin extends Plugin {
         ].forEach(eventRef => {
             this.registerEvent(eventRef);
         });
-    }
-}
-
-class EditDetector {
-    private lastModified?: Date;
-
-    constructor(private editDetectionSec: ReadOnlyReference<number>) {}
-
-    fileChanged() {
-        this.lastModified = new Date();
-    }
-
-    isEditing(): boolean {
-        if (this.editDetectionSec.value <= 0) {
-            return false;
-        }
-        if (this.lastModified == null) {
-            return false;
-        }
-        const elapsedSec = (new Date().getTime() - this.lastModified.getTime()) / 1000;
-        return elapsedSec < this.editDetectionSec.value;
     }
 }
