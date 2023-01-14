@@ -39,6 +39,7 @@ class Settings {
     templateHeading: SettingModel<string, string>;
     deleteOnComplete: SettingModel<boolean, boolean>;
     removeEmptyTodos: SettingModel<boolean, boolean>;
+    debugEnable: SettingModel<boolean, boolean>;
 
     constructor() {
         const reminderFormatSettings = new ReminderFormatSettings(this.settings);
@@ -210,6 +211,14 @@ class Settings {
             .toggle(true)
             .build(new RawSerde());
 
+        this.debugEnable = this.settings
+            .newSettingBuilder()
+            .key('debugEnable')
+            .name('Enable debug')
+            .desc('If you set this value as true, your will see debug info in console.')
+            .toggle(true)
+            .build(new RawSerde());
+
         this.settings
             .newGroup('Rollover TODOs')
             .addSettings(this.templateHeading, this.deleteOnComplete, this.removeEmptyTodos);
@@ -237,7 +246,9 @@ class Settings {
         this.settings
             .newGroup('Reminder Format - Kanban Plugin')
             .addSettings(reminderFormatSettings.enableKanbanPluginReminderFormat);
-        this.settings.newGroup('Advanced').addSettings(this.editDetectionSec, this.reminderCheckIntervalSec);
+        this.settings
+            .newGroup('Advanced')
+            .addSettings(this.editDetectionSec, this.reminderCheckIntervalSec, this.debugEnable);
 
         const config = new ReminderFormatConfig();
         config.setParameterFunc(ReminderFormatParameterKey.now, () => DateTime.now());

@@ -15,7 +15,7 @@ import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
 import { Emoji } from 'render/Emoji';
 import { ReminderModal } from 'ui/reminder';
 // import { AutoComplete } from 'ui/autocomplete';
-import Logger from 'utils/logger';
+import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
@@ -408,6 +408,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
         this.app.workspace.onLayoutReady(async () => {
             await this.pluginDataIO.load();
+            toggleDebugEnable(SETTINGS.debugEnable.value);
             if (this.pluginDataIO.debug.value) {
                 monkeyPatchConsole(this);
             }
@@ -604,39 +605,30 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private setupUI() {
-        this.registerView(VIEW_TYPE_EXAMPLE, leaf => new ExampleView(leaf));
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
-        // 自定义图标
-        addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 状态栏图标
-        const item = this.addStatusBarItem();
-        item.createEl('span', { text: 'Hello from the status bar 👋' });
-        // setIcon(item, "info", 14);
-        const fruits = this.addStatusBarItem();
-        fruits.createEl('span', { text: '🍎' });
-        fruits.createEl('span', { text: '🍌' });
-
-        const veggies = this.addStatusBarItem();
-        veggies.createEl('span', { text: '🥦' });
-        veggies.createEl('span', { text: '🥬' });
+        const obsidianManagerStatusBar = this.addStatusBarItem();
+        // obsidianManagerStatusBar.createEl('span', { text: '🍎' });
+        setIcon(obsidianManagerStatusBar, 'swords', 14);
+        // 自定义图标
+        // addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 设置选项卡
         this.addSettingTab(new ReminderSettingTab(this.app, this, this.pluginDataIO));
+        this.registerView(VIEW_TYPE_EXAMPLE, leaf => new ExampleView(leaf));
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
         // 左侧菜单，使用自定义图标
-        this.addRibbonIcon('circle', 'Sample Plugin', event => {
+        this.addRibbonIcon('swords', 'Obsidian Manager', event => {
             new Notice('This is a notice!');
             const menu = new Menu();
             menu.addItem(item =>
                 item
-                    .setTitle('Test')
-                    .setIcon('documents')
+                    .setTitle('Activate view')
+                    .setIcon('activity')
                     .onClick(() => {
-                        new Notice('Tested');
+                        new Notice('Activate view');
+                        this.activateView();
                     }),
             );
             menu.showAtMouseEvent(event);
-        });
-        this.addRibbonIcon('dice', 'Activate view', () => {
-            this.activateView();
         });
     }
 
@@ -654,7 +646,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             }),
             this.app.workspace.on('editor-menu', (menu, editor, view) => {
                 menu.addItem(item => {
-                    item.setTitle('Print file path 👈')
+                    item.setTitle('Start a pomodoro timer 👈')
                         .setIcon('document')
                         .onClick(async () => {
                             new Notice(view.file.path);

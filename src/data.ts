@@ -69,7 +69,7 @@ export class PluginDataIO {
     }
 
     async save(force = false) {
-        Logger.warn('save exec');
+        // Logger.warn('save exec');
         if (!force && !this.changed) {
             return;
         }

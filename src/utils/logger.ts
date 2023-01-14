@@ -2,9 +2,13 @@ import { inspect } from 'util';
 import chalk from 'chalk';
 
 chalk.level = 3;
+let debugEnable = true;
 
 // TODO 溯源，显示调用处
 const printer = (args, chalkify) => {
+    if (!debugEnable) {
+        return;
+    }
     if (args.length === 0) throw '::::::error::::: no argument supplied to logger';
 
     args.forEach(element => {
@@ -19,18 +23,23 @@ const printer = (args, chalkify) => {
 
 export default class Logger {
     static log(...args: any) {
-        printer(args, chalk.cyanBright.bold);
+        printer(args, chalk.bgCyanBright.blackBright.bold);
     }
     static dir(...args: any) {
-        printer(args, chalk.blueBright.bold);
+        printer(args, chalk.bgBlueBright.blackBright.bold);
     }
     static info(...args: any) {
-        printer(args, chalk.blue.bold);
+        printer(args, chalk.bgBlueBright.blackBright.bold);
     }
     static warn(...args: any) {
-        printer(args, chalk.yellow.bold);
+        printer(args, chalk.bgYellowBright.blackBright.bold);
     }
     static error(...args: any) {
-        printer(args, chalk.red.bold);
+        printer(args, chalk.bgRedBright.blackBright.bold);
     }
 }
+
+export const toggleDebugEnable = value => {
+    console.error('====================' + value);
+    debugEnable = value;
+};
