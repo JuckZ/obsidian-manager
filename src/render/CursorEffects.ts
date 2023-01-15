@@ -24,22 +24,75 @@ import {
     trailingCursor,
 } from 'cursor-effects';
 
-export function showEmojiCursor() {
-    const emo = new emojiCursor({ emoji: ['要事第一'] });
-    const timer = window.setTimeout(() => {
-        emo.destroy();
-        clearTimeout(timer);
-    }, 1000);
-    // new emojiCursor({ emoji: ['🔥', '🐬', '🦆'] });
+export const effects = [
+    'bubbleCursor',
+    'clockCursor',
+    'emojiCursor',
+    'fairyDustCursor',
+    'followingDotCursor',
+    'ghostCursor',
+    'rainbowCursor',
+    'snowflakeCursor',
+    'springyEmojiCursor',
+    'textFlag',
+    'trailingCursor',
+];
+
+const cursorEffects: any[] = [];
+
+export function enableCursorEffect(effectName) {
+    let emo;
+    switch (effectName) {
+        case 'bubbleCursor':
+            emo = new bubbleCursor();
+            break;
+        case 'clockCursor':
+            emo = new clockCursor();
+            break;
+        case 'emojiCursor':
+            emo = new emojiCursor({ emoji: ['🔥', '🐬', '🦆'] });
+            break;
+        case 'fairyDustCursor':
+            emo = new fairyDustCursor();
+            break;
+        case 'followingDotCursor':
+            emo = new followingDotCursor();
+            break;
+        case 'ghostCursor':
+            emo = new ghostCursor();
+            break;
+        case 'rainbowCursor':
+            emo = new rainbowCursor();
+            break;
+        case 'snowflakeCursor':
+            emo = new snowflakeCursor();
+            break;
+        case 'springyEmojiCursor':
+            emo = new springyEmojiCursor();
+            break;
+        case 'textFlag':
+            emo = new textFlag();
+            break;
+        case 'trailingCursor':
+            emo = new trailingCursor();
+            break;
+        default:
+            break;
+    }
+    cursorEffects.push(emo);
 }
 
-export default function heartBeat() {
-    // party.confetti(node, {
-    //     shapes: ['roundedSquare', '富强'],
+export function disableCursorEffect() {
+    cursorEffects.forEach(emo => emo.destroy());
+}
+
+export function heartBeat(sourceSamplerVal) {
+    // party.confetti(sourceSamplerVal, {
+    //     shapes: ['roundedSquare', 'myShape'],
     //     count: party.variation.range(4, 5),
     // });
 
-    // party.resolvableShapes['富强'] = '<div>hello</div>';
+    // party.resolvableShapes['myShape'] = '<div>hello</div>';
 
     const heartPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     heartPath.setAttribute(
@@ -72,7 +125,7 @@ export default function heartBeat() {
         emissionOptions: {
             rate: 0,
             bursts: [{ time: 0, count: party.variation.skew(20, 10) }],
-            sourceSampler: party.sources.dynamicSource(node),
+            sourceSampler: party.sources.dynamicSource(sourceSamplerVal),
             angle: party.variation.range(0, 360),
             initialSpeed: 400,
             initialColor: party.variation.gradientSample(

@@ -122,3 +122,4 @@ OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm run dev
 4. RTL support for Obsidian [Obsidian RTL Plugin](https://github.com/esm7/obsidian-rtl)
 5. [awesome power mode](https://github.com/codeinthedark/awesome-power-mode)
 6. [code-blast-codemirror](https://github.com/chinchang/code-blast-codemirror)
+7. [party-js](https://github.com/yiliansource/party-js)

@@ -1,4 +1,6 @@
 import type { Editor } from 'obsidian';
+import { heartBeat } from './CursorEffects';
+
 let shakeTime = 0,
     shakeTimeMax = 0,
     lastTime = 0,
@@ -42,6 +44,7 @@ function spawnParticles(cm, type) {
     const cursorPos = cm.getCursor();
     const pos = cm.coordsAtPos(cursorPos);
     const node = document.elementFromPoint(pos.left - 5, pos.top + 5);
+    heartBeat(node);
     type = cm.wordAt(cursorPos);
     if (type) {
         type = type.type;

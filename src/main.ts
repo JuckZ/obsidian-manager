@@ -1,4 +1,4 @@
-import type { EditorPosition, MarkdownFileInfo, PluginManifest } from 'obsidian';
+import type { EditorPosition, MarkdownFileInfo, PluginManifest, TAbstractFile, Tasks, WorkspaceWindow } from 'obsidian';
 import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, WorkspaceLeaf, addIcon, setIcon } from 'obsidian';
 import moment from 'moment';
 import type { ExtApp, ExtTFile } from 'types';
@@ -13,6 +13,7 @@ import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
 import { Example1Modal, Example2Modal, InsertLinkModal } from 'ui/modal/insert-link-modal';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
 import { codeEmoji } from 'render/Emoji';
+import { disableCursorEffect, effects, enableCursorEffect } from 'render/CursorEffects';
 import { buildTagRules } from 'render/Tag';
 import { ReminderModal } from 'ui/reminder';
 import Logger, { toggleDebugEnable } from 'utils/logger';
@@ -46,7 +47,29 @@ export default class ObsidianManagerPlugin extends Plugin {
     private editDetector: EditDetector;
     private reminderModal: ReminderModal;
     private reminders: Reminders;
-    pasteFunction: (evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView) => any;
+    quickPreviewFunction: (file: TFile, data: string) => any;
+    resizeFunction: () => any;
+    clickFunction: (evt: MouseEvent) => any;
+    activeLeafChangeFunction: (leaf: WorkspaceLeaf | null) => any;
+    fileOpenFunction: (file: TFile | null) => any;
+    layoutChangeFunction: () => any;
+    windowOpenFunction: (win: WorkspaceWindow, window: Window) => any;
+    windowCloseFunction: (win: WorkspaceWindow, window: Window) => any;
+    cssChangeFunction: () => any;
+    fileMenuFunction: (menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf) => any;
+    editorMenuFunction: (menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo) => any;
+    editorChangeFunction: (editor: Editor, info: MarkdownView | MarkdownFileInfo) => any;
+    editorPasteFunction: (evt: ClipboardEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo) => any;
+    editorDropFunction: (evt: DragEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo) => any;
+    codemirrorFunction: (cm: CodeMirror.Editor) => any;
+    quitFunction: (tasks: Tasks) => any;
+
+    vaultCreateFunction: (file: TAbstractFile) => any;
+    vaultModifyFunction: (file: TAbstractFile) => any;
+    vaultDeleteFunction: (file: TAbstractFile) => any;
+    vaultRenameFunction: (file: TAbstractFile, oldPath: string) => any;
+    vaultClosedFunction: () => any;
+
     customSnippetPath: string;
     useSnippet = true;
     style: HTMLStyleElement;
@@ -66,8 +89,16 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.editDetector = new EditDetector(SETTINGS.editDetectionSec);
         this.remindersController = new RemindersController(app.vault, this.reminders);
         this.reminderModal = new ReminderModal(this.app, SETTINGS.useSystemNotification, SETTINGS.laters);
-        // TODO 完善
-        this.pasteFunction = this.customizePaste.bind(this);
+        this.resizeFunction = this.customizeResize.bind(this);
+        this.clickFunction = this.customizeClick.bind(this);
+        this.editorMenuFunction = this.customizeEditorMenu.bind(this);
+        this.editorChangeFunction = this.customizeEditorChange.bind(this);
+        this.editorPasteFunction = this.customizeEditorPaste.bind(this);
+        this.fileMenuFunction = this.customizeFileMenu.bind(this);
+        this.vaultCreateFunction = this.customizeVaultCreate.bind(this);
+        this.vaultModifyFunction = this.customizeVaultModify.bind(this);
+        this.vaultDeleteFunction = this.customizeVaultDelete.bind(this);
+        this.vaultRenameFunction = this.customizeVaultRename.bind(this);
     }
 
     get snippetPath() {
@@ -347,7 +378,29 @@ export default class ObsidianManagerPlugin extends Plugin {
         return { line: l, ch: ch };
     }
 
-    async customizePaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
+    async customizeResize(): Promise<void> {
+        console.log('resize');
+    }
+
+    async customizeClick(evt: MouseEvent): Promise<void> {
+        console.log('customizeClick');
+    }
+
+    async customizeEditorMenu(menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
+        menu.addItem(item => {
+            item.setTitle('Start a pomodoro timer 👈')
+                .setIcon('document')
+                .onClick(async () => {
+                    new Notice(info.file?.path || 'xxx');
+                });
+        });
+    }
+    async customizeEditorChange(editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
+        onCodeMirrorChange(editor);
+    }
+
+    async customizeEditorPaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
+        // TODO 完善
         Logger.warn(evt);
         Logger.dir(evt.clipboardData?.files);
         const clipboardText = evt.clipboardData?.getData('text/plain') || 'xxx';
@@ -369,6 +422,47 @@ export default class ObsidianManagerPlugin extends Plugin {
             Logger.warn(newText);
             editor.replaceRange(newText, startPos, endPos);
             return;
+        }
+    }
+
+    async customizeFileMenu(menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf): Promise<void> {
+        menu.addItem(item => {
+            item.setTitle('Print file path 👈')
+                .setIcon('document')
+                .onClick(async () => {
+                    new Notice(file.path);
+                });
+        });
+    }
+
+    async customizeVaultCreate(file: TAbstractFile): Promise<void> {
+        // TODO 增加开关，决定是否自动rollover
+        // this.rollover(file as TFile);
+    }
+
+    async customizeVaultModify(file: TAbstractFile): Promise<void> {
+        this.remindersController.reloadFile(file, true);
+    }
+
+    async customizeVaultDelete(file: TAbstractFile): Promise<void> {
+        const { format } = getDailyNoteSettings();
+        const today = new Date();
+        const todayFormatted = moment(today).format(format);
+        if (
+            file.name == todayFormatted + '.md' &&
+            this.app.commands.commands['obsidian-day-planner:app:unlink-day-planner-from-note']
+        ) {
+            this.app.commands.executeCommandById('obsidian-day-planner:app:unlink-day-planner-from-note');
+        }
+        this.remindersController.removeFile(file.path);
+    }
+
+    async customizeVaultRename(file: TAbstractFile, oldPath: string): Promise<void> {
+        // We only reload the file if it CAN be deleted, otherwise this can
+        // cause crashes.
+        if (await this.remindersController.removeFile(oldPath)) {
+            // We need to do the reload synchronously so as to avoid racing.
+            await this.remindersController.reloadFile(file);
         }
     }
 
@@ -520,11 +614,29 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
 
         this.addCommand({
+            id: 'enable-cursor-effect',
+            name: 'Enable CursorEffect',
+            callback: () => {
+                const len = effects.length;
+                const idx = Math.floor(Math.random() * len);
+                enableCursorEffect(effects[idx]);
+            },
+        });
+
+        this.addCommand({
+            id: 'disable-cursor-effect',
+            name: 'Disable CursorEffect',
+            callback: () => {
+                disableCursorEffect();
+            },
+        });
+
+        this.addCommand({
             id: 'demo show',
             name: 'demo show',
             hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 't' }],
             editorCallback: (editor: Editor, view: MarkdownView) => {
-                // this.sayHello();
+                this.sayHello();
             },
         });
 
@@ -731,14 +843,12 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
         // 左侧菜单，使用自定义图标
         this.addRibbonIcon('swords', 'Obsidian Manager', event => {
-            new Notice('This is a notice!');
             const menu = new Menu();
             menu.addItem(item =>
                 item
                     .setTitle('Activate view')
                     .setIcon('activity')
                     .onClick(() => {
-                        new Notice('Activate view');
                         this.activateView();
                     }),
             );
@@ -752,64 +862,16 @@ export default class ObsidianManagerPlugin extends Plugin {
             // xx
         };
         [
-            // this.app.workspace.on('click', (evt: MouseEvent) => {
-            //     console.log('click');
-            // }),
-            this.app.workspace.on('resize', () => {
-                console.log('resize');
-            }),
-            this.app.workspace.on('editor-change', (editor: Editor) => {
-                onCodeMirrorChange(editor);
-            }),
-            this.app.workspace.on('editor-paste', this.pasteFunction),
-            this.app.workspace.on('file-menu', (menu, file) => {
-                menu.addItem(item => {
-                    item.setTitle('Print file path 👈')
-                        .setIcon('document')
-                        .onClick(async () => {
-                            new Notice(file.path);
-                        });
-                });
-            }),
-            this.app.workspace.on(
-                'editor-menu',
-                (menu: Menu, editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
-                    menu.addItem(item => {
-                        item.setTitle('Start a pomodoro timer 👈')
-                            .setIcon('document')
-                            .onClick(async () => {
-                                new Notice(view.file?.path || 'xxx');
-                            });
-                    });
-                },
-            ),
-            this.app.vault.on('create', async file => {
-                // TODO 增加开关，决定是否自动rollover
-                // this.rollover(file as TFile);
-            }),
-            this.app.vault.on('modify', async file => {
-                this.remindersController.reloadFile(file, true);
-            }),
-            this.app.vault.on('delete', file => {
-                const { format } = getDailyNoteSettings();
-                const today = new Date();
-                const todayFormatted = moment(today).format(format);
-                if (
-                    file.name == todayFormatted + '.md' &&
-                    this.app.commands.commands['obsidian-day-planner:app:unlink-day-planner-from-note']
-                ) {
-                    this.app.commands.executeCommandById('obsidian-day-planner:app:unlink-day-planner-from-note');
-                }
-                this.remindersController.removeFile(file.path);
-            }),
-            this.app.vault.on('rename', async (file, oldPath) => {
-                // We only reload the file if it CAN be deleted, otherwise this can
-                // cause crashes.
-                if (await this.remindersController.removeFile(oldPath)) {
-                    // We need to do the reload synchronously so as to avoid racing.
-                    await this.remindersController.reloadFile(file);
-                }
-            }),
+            this.app.workspace.on('click', this.clickFunction),
+            this.app.workspace.on('resize', this.customizeResize),
+            this.app.workspace.on('editor-change', this.customizeEditorChange),
+            this.app.workspace.on('editor-paste', this.editorPasteFunction),
+            this.app.workspace.on('file-menu', this.fileMenuFunction),
+            this.app.workspace.on('editor-menu', this.customizeEditorMenu),
+            this.app.vault.on('create', this.vaultCreateFunction),
+            this.app.vault.on('modify', this.vaultModifyFunction),
+            this.app.vault.on('delete', this.vaultDeleteFunction),
+            this.app.vault.on('rename', this.vaultRenameFunction),
         ].forEach(eventRef => {
             this.registerEvent(eventRef);
         });
