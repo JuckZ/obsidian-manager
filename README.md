@@ -119,3 +119,6 @@ OUTDIR="path_to_this_plugin_in_your_obsidian_vault" npm run dev
 1. all codes of obsidian-rollover-daily-todos [obsidian-rollover-daily-todos](https://github.com/lumoe/obsidian-rollover-daily-todos)
 2. obsidian-admotion structure [obsidian-admotion](https://github.com/valentine195/obsidian-admonition)
 3. part of codes of obsidian-reminder [obsidian-reminder](https://github.com/uphy/obsidian-reminder)
+4. RTL support for Obsidian [Obsidian RTL Plugin](https://github.com/esm7/obsidian-rtl)
+5. [awesome power mode](https://github.com/codeinthedark/awesome-power-mode)
+6. [code-blast-codemirror](https://github.com/chinchang/code-blast-codemirror)

@@ -1,8 +1,9 @@
-import type { EditorPosition, PluginManifest, WorkspaceLeaf } from 'obsidian';
-import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, addIcon, setIcon } from 'obsidian';
+import type { EditorPosition, PluginManifest } from 'obsidian';
+import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, WorkspaceLeaf, addIcon, setIcon } from 'obsidian';
 import moment from 'moment';
 import type { ExtApp, ExtTFile } from 'types';
 import { EditDetector, OneDay, Tag, UndoHistoryInstance } from 'types';
+import { emojiCursor } from 'cursor-effects';
 import { getAllDailyNotes, getDailyNote, getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
@@ -17,12 +18,330 @@ import { ReminderModal } from 'ui/reminder';
 // import { AutoComplete } from 'ui/autocomplete';
 import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
+import {
+    Decoration,
+    DecorationSet,
+    EditorView,
+    PluginSpec,
+    PluginValue,
+    ViewPlugin,
+    ViewUpdate,
+    WidgetType,
+    lineNumbers,
+} from '@codemirror/view';
+import { EditorState, Extension, RangeSetBuilder, StateEffect, StateField, Transaction } from '@codemirror/state';
+import { syntaxTree } from '@codemirror/language';
+
+// setting for rtl support
+class Settings {
+    public fileDirections: { [path: string]: string } = {};
+    public defaultDirection = 'ltr';
+    public rememberPerFile = true;
+    public setNoteTitleDirection = true;
+    public setYamlDirection = false;
+
+    toJson() {
+        return JSON.stringify(this);
+    }
+
+    fromJson(content: string) {
+        const obj = JSON.parse(content);
+        this.fileDirections = obj['fileDirections'];
+        this.defaultDirection = obj['defaultDirection'];
+        this.rememberPerFile = obj['rememberPerFile'];
+        this.setNoteTitleDirection = obj['setNoteTitleDirection'];
+    }
+}
+
+class EmojiListPlugin implements PluginValue {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+        this.decorations = this.buildDecorations(view);
+    }
+
+    update(update: ViewUpdate) {
+        if (update.docChanged || update.viewportChanged) {
+            this.decorations = this.buildDecorations(update.view);
+        }
+    }
+
+    destroy() {
+        // console.log('destory====');
+    }
+
+    buildDecorations(view: EditorView): DecorationSet {
+        const builder = new RangeSetBuilder<Decoration>();
+
+        for (const { from, to } of view.visibleRanges) {
+            syntaxTree(view.state).iterate({
+                from,
+                to,
+                enter(node) {
+                    if (node.type.name.startsWith('list')) {
+                        // Position of the '-' or the '*'.
+                        const listCharFrom = node.from - 2;
+
+                        builder.add(
+                            listCharFrom,
+                            listCharFrom + 1,
+                            Decoration.replace({
+                                widget: new EmojiWidget(),
+                            }),
+                        );
+                    }
+                },
+            });
+        }
+
+        return builder.finish();
+    }
+}
+
+const pluginSpec: PluginSpec<EmojiListPlugin> = {
+    decorations: (value: EmojiListPlugin) => value.decorations,
+};
+
+const emojiListPlugin = ViewPlugin.fromClass(EmojiListPlugin, pluginSpec);
+
+class EmojiWidget extends WidgetType {
+    toDOM(view: EditorView): HTMLElement {
+        const div = document.createElement('span');
+
+        div.innerText = '👉';
+
+        return div;
+    }
+}
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
+
+let shakeTime = 0,
+    shakeTimeMax = 0,
+    lastTime = 0,
+    particlePointer = 0,
+    effect,
+    isActive = false,
+    cmNode,
+    canvas,
+    ctx;
+
+const shakeIntensity = 5,
+    particles = [],
+    MAX_PARTICLES = 500,
+    PARTICLE_NUM_RANGE = { min: 5, max: 10 },
+    PARTICLE_GRAVITY = 0.08,
+    PARTICLE_ALPHA_FADEOUT = 0.96,
+    PARTICLE_VELOCITY_RANGE = {
+        x: [-1, 1],
+        y: [-3.5, -1.5],
+    },
+    codemirrors = [],
+    w = window.innerWidth,
+    h = window.innerHeight;
+
+const throttledShake = throttle(shake, 100);
+const throttledSpawnParticles = throttle(spawnParticles, 100);
+
+function getRGBComponents(node) {
+    const color = getComputedStyle(node).color;
+    if (color) {
+        try {
+            return color.match(/(\d+), (\d+), (\d+)/).slice(1);
+        } catch (e) {
+            return [255, 255, 255];
+        }
+    } else {
+        return [255, 255, 255];
+    }
+}
+
+function spawnParticles(cm, type) {
+    const cursorPos = cm.getCursor();
+    const pos = cm.coordsAtPos(cursorPos);
+    const node = document.elementFromPoint(pos.left - 5, pos.top + 5);
+    type = cm.wordAt(cursorPos);
+    if (type) {
+        type = type.type;
+    }
+    const numParticles = random(PARTICLE_NUM_RANGE.min, PARTICLE_NUM_RANGE.max);
+    const color = getRGBComponents(node);
+
+    for (let i = numParticles; i--; ) {
+        particles[particlePointer] = createParticle(pos.left + 10, pos.top, color);
+        particlePointer = (particlePointer + 1) % MAX_PARTICLES;
+    }
+}
+
+function createParticle(x, y, color) {
+    const p = {
+        x: x,
+        y: y + 10,
+        alpha: 1,
+        color: color,
+    };
+    if (effect === 1) {
+        p.size = random(2, 4);
+        p.vx =
+            PARTICLE_VELOCITY_RANGE.x[0] +
+            Math.random() * (PARTICLE_VELOCITY_RANGE.x[1] - PARTICLE_VELOCITY_RANGE.x[0]);
+        p.vy =
+            PARTICLE_VELOCITY_RANGE.y[0] +
+            Math.random() * (PARTICLE_VELOCITY_RANGE.y[1] - PARTICLE_VELOCITY_RANGE.y[0]);
+    } else if (effect === 2) {
+        p.size = random(2, 8);
+        p.drag = 0.92;
+        p.vx = random(-3, 3);
+        p.vy = random(-3, 3);
+        p.wander = 0.15;
+        p.theta = (random(0, 360) * Math.PI) / 180;
+    }
+    return p;
+}
+
+function effect1(particle) {
+    particle.vy += PARTICLE_GRAVITY;
+    particle.x += particle.vx;
+    particle.y += particle.vy;
+
+    particle.alpha *= PARTICLE_ALPHA_FADEOUT;
+
+    ctx.fillStyle =
+        'rgba(' + particle.color[0] + ',' + particle.color[1] + ',' + particle.color[2] + ',' + particle.alpha + ')';
+    ctx.fillRect(Math.round(particle.x - 1), Math.round(particle.y - 1), particle.size, particle.size);
+}
+
+// Effect based on Soulwire's demo: http://codepen.io/soulwire/pen/foktm
+function effect2(particle) {
+    particle.x += particle.vx;
+    particle.y += particle.vy;
+    particle.vx *= particle.drag;
+    particle.vy *= particle.drag;
+    particle.theta += random(-0.5, 0.5);
+    particle.vx += Math.sin(particle.theta) * 0.1;
+    particle.vy += Math.cos(particle.theta) * 0.1;
+    particle.size *= 0.96;
+
+    ctx.fillStyle =
+        'rgba(' + particle.color[0] + ',' + particle.color[1] + ',' + particle.color[2] + ',' + particle.alpha + ')';
+    ctx.beginPath();
+    ctx.arc(Math.round(particle.x - 1), Math.round(particle.y - 1), particle.size, 0, 2 * Math.PI);
+    ctx.fill();
+}
+
+function drawParticles() {
+    let particle;
+    for (let i = particles.length; i--; ) {
+        particle = particles[i];
+        if (!particle || particle.alpha < 0.01 || particle.size <= 0.5) {
+            continue;
+        }
+
+        if (effect === 1) {
+            effect1(particle);
+        } else if (effect === 2) {
+            effect2(particle);
+        }
+    }
+}
+
+function shake(editor: Editor, time) {
+    window.editor = editor;
+    // cmNode = editor.cm;
+    cmNode = editor.containerEl;
+    shakeTime = shakeTimeMax = time;
+}
+
+function random(min, max) {
+    if (!max) {
+        max = min;
+        min = 0;
+    }
+    return min + ~~(Math.random() * (max - min + 1));
+}
+
+function throttle(callback, limit) {
+    let wait = false;
+    return function () {
+        if (!wait) {
+            // eslint-disable-next-line prefer-rest-params
+            callback.apply(this, arguments);
+            wait = true;
+            setTimeout(function () {
+                wait = false;
+            }, limit);
+        }
+    };
+}
+
+function loop() {
+    if (!isActive) {
+        return;
+    }
+
+    ctx.clearRect(0, 0, w, h);
+
+    // get the time past the previous frame
+    const current_time = new Date().getTime();
+    if (!lastTime) lastTime = current_time;
+    const dt = (current_time - lastTime) / 1000;
+    lastTime = current_time;
+    if (shakeTime > 0) {
+        shakeTime -= dt;
+        const magnitude = (shakeTime / shakeTimeMax) * shakeIntensity;
+        const shakeX = random(-magnitude, magnitude);
+        const shakeY = random(-magnitude, magnitude);
+        cmNode.style.transform = 'translate(' + shakeX + 'px,' + shakeY + 'px)';
+    }
+    drawParticles();
+    requestAnimationFrame(loop);
+}
+
+function onCodeMirrorChange(editor) {
+    // eslint-disable-next-line no-constant-condition
+    if (1 == 1) {
+        // editor.getOption('blastCode') === true || editor.getOption('blastCode').shake === undefined
+        throttledShake(editor, 0.3);
+    }
+    throttledSpawnParticles(editor);
+}
+
+function init(editor) {
+    isActive = true;
+
+    if (!canvas) {
+        canvas = document.createElement('canvas');
+        (ctx = canvas.getContext('2d')), (canvas.id = 'code-blast-canvas');
+        canvas.style.position = 'absolute';
+        canvas.style.top = 0;
+        canvas.style.left = 0;
+        canvas.style.zIndex = 1;
+        canvas.style.pointerEvents = 'none';
+        canvas.width = w;
+        canvas.height = h;
+
+        document.body.appendChild(canvas);
+        loop();
+    }
+}
+
+function destroy(editor) {
+    codemirrors.splice(codemirrors.indexOf(editor), 1);
+    if (!codemirrors.length) {
+        isActive = false;
+        if (canvas) {
+            canvas.remove();
+            canvas = null;
+        }
+    }
+}
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
     pluginDataIO: PluginDataIO;
+    public SETTINGS_PATH = '.obsidian/rtl.json';
+    public settings = new Settings();
+    private currentFile: TFile;
     private undoHistory: any[];
     private undoHistoryTime: Date;
     private remindersController: RemindersController;
@@ -391,6 +710,12 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onload(): Promise<void> {
+        this.registerEditorExtension(lineNumbers());
+        this.registerEditorExtension(emojiListPlugin);
+        const editor = this.app.workspace.activeEditor;
+        codemirrors.push(editor);
+        effect = 2;
+        init(editor);
         this.setupUI();
         this.setupCommands();
         this.registerMarkdownPostProcessor((element, context) => {
@@ -524,11 +849,33 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onunload(): Promise<void> {
+        destroy(this.app.workspace.activeEditor?.editor);
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
         this.style.detach();
     }
 
     private setupCommands() {
+        this.addCommand({
+            id: 'switch-text-direction',
+            name: 'Switch Text Direction (LTR<>RTL)',
+            callback: () => {
+                this.toggleDocumentDirection();
+                // const eve = (...args: any[]) => {
+                //     Logger.warn(...args);
+                // };
+                // new Example1Modal(this.app).open();
+            },
+        });
+
+        this.addCommand({
+            id: 'demo show',
+            name: 'demo show',
+            hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 't' }],
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                // this.sayHello();
+            },
+        });
+
         this.addCommand({
             id: 'insert-link',
             name: 'Insert link',
@@ -547,30 +894,10 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
 
         this.addCommand({
-            id: 'obsidian-manager-sayHello1',
-            name: 'Say Example1Modal',
-            callback: () => {
-                const eve = (...args: any[]) => {
-                    Logger.warn(...args);
-                };
-                new Example1Modal(this.app).open();
-            },
-        });
-
-        this.addCommand({
             id: 'obsidian-manager-addMyTag',
             name: 'Add MyTag',
             callback: () => {
                 this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
-            },
-        });
-
-        this.addCommand({
-            id: 'obsidian-manager-sayHello',
-            name: 'Say Hello',
-            hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 'a' }],
-            callback: () => {
-                this.sayHello();
             },
         });
 
@@ -604,7 +931,139 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
     }
 
+    toggleDocumentDirection() {
+        const newDirection = this.getDocumentDirection() === 'ltr' ? 'rtl' : 'ltr';
+        this.setDocumentDirection(newDirection);
+        if (this.settings.rememberPerFile && this.currentFile && this.currentFile.path) {
+            this.settings.fileDirections[this.currentFile.path] = newDirection;
+            this.saveSettings();
+        }
+    }
+
+    saveSettings() {
+        const settings = this.settings.toJson();
+        this.app.vault.adapter.write(this.SETTINGS_PATH, settings);
+    }
+
+    getDocumentDirection() {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view) return 'unknown';
+        const rtlEditors = view.contentEl.getElementsByClassName('is-rtl');
+        if (rtlEditors.length > 0) return 'rtl';
+        else return 'ltr';
+    }
+
+    setDocumentDirection(newDirection: string) {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view || !view?.editor) return;
+
+        const editorDivs = view.contentEl.getElementsByClassName('cm-editor');
+        for (const editorDiv of editorDivs) {
+            if (editorDiv instanceof HTMLDivElement) this.setDocumentDirectionForEditorDiv(editorDiv, newDirection);
+        }
+        const markdownPreviews = view.contentEl.getElementsByClassName('markdown-preview-view');
+        for (const preview of markdownPreviews) {
+            if (preview instanceof HTMLDivElement) this.setDocumentDirectionForReadingDiv(preview, newDirection);
+        }
+
+        // --- General global fixes ---
+
+        // Fix list indentation problems in RTL
+        this.replacePageStyleByString(
+            'List indent fix',
+            '/* List indent fix */ .is-rtl .HyperMD-list-line { text-indent: 0px !important; }',
+            true,
+        );
+        this.replacePageStyleByString(
+            'CodeMirror-rtl pre',
+            '.CodeMirror-rtl pre { text-indent: 0px !important; }',
+            true,
+        );
+
+        // Embedded backlinks should always be shown as LTR
+        this.replacePageStyleByString(
+            'Embedded links always LTR',
+            '/* Embedded links always LTR */ .embedded-backlinks { direction: ltr; }',
+            true,
+        );
+
+        // Fold indicator fix (not perfect yet -- it can't be clicked)
+        this.replacePageStyleByString(
+            'Fold symbol fix',
+            '/* Fold symbol fix*/ .is-rtl .cm-fold-indicator { right: -15px !important; }',
+            true,
+        );
+
+        if (this.settings.setNoteTitleDirection) {
+            const container = view.containerEl.parentElement;
+            const header = container.getElementsByClassName('view-header-title-container');
+            (header[0] as HTMLDivElement).style.direction = newDirection;
+        }
+
+        view.editor.refresh();
+
+        // Set the *currently active* export direction. This is global and changes every time the user
+        // switches a pane
+        this.setExportDirection(newDirection);
+    }
+
+    setDocumentDirectionForEditorDiv(editorDiv: HTMLDivElement, newDirection: string) {
+        editorDiv.style.direction = newDirection;
+        if (newDirection === 'rtl') {
+            editorDiv.parentElement.classList.add('is-rtl');
+        } else {
+            editorDiv.parentElement.classList.remove('is-rtl');
+        }
+    }
+
+    setDocumentDirectionForReadingDiv(readingDiv: HTMLDivElement, newDirection: string) {
+        readingDiv.style.direction = newDirection;
+        // Although Obsidian doesn't care about is-rtl in Markdown preview, we use it below for some more formatting
+        if (newDirection === 'rtl') readingDiv.classList.add('is-rtl');
+        else readingDiv.classList.remove('is-rtl');
+        if (this.settings.setYamlDirection)
+            this.replacePageStyleByString(
+                'Patch YAML',
+                '/* Patch YAML RTL */ .is-rtl .language-yaml code { text-align: right; }',
+                true,
+            );
+    }
+
+    setExportDirection(newDirection: string) {
+        this.replacePageStyleByString(
+            'searched and replaced',
+            `/* This is searched and replaced by the plugin */ @media print { body { direction: ${newDirection}; } }`,
+            false,
+        );
+    }
+
+    // Returns true if a replacement was made
+    replacePageStyleByString(searchString: string, newStyle: string, addIfNotFound: boolean) {
+        let alreadyExists = false;
+        const style = this.findPageStyle(searchString);
+        if (style) {
+            if (style.getText() === searchString) alreadyExists = true;
+            else style.setText(newStyle);
+        } else if (addIfNotFound) {
+            const style = document.createElement('style');
+            style.textContent = newStyle;
+            document.head.appendChild(style);
+        }
+        return style && !alreadyExists;
+    }
+
+    findPageStyle(regex: string) {
+        const styles = document.head.getElementsByTagName('style');
+        for (const style of styles) {
+            if (style.getText().match(regex)) return style;
+        }
+        return null;
+    }
+
     private setupUI() {
+        // 输入特效，power mode, 参考https://github.com/codeinthedark/awesome-power-mode
+        // 鼠标特效，增加开启关闭入口
+        // new emojiCursor({ emoji: ['🔥', '🐬', '🦆'] });
         // 状态栏图标
         const obsidianManagerStatusBar = this.addStatusBarItem();
         // obsidianManagerStatusBar.createEl('span', { text: '🍎' });
@@ -634,6 +1093,9 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     private watchVault() {
         [
+            this.app.workspace.on('editor-change', (editor: Editor) => {
+                onCodeMirrorChange(editor);
+            }),
             this.app.workspace.on('editor-paste', this.pasteFunction),
             this.app.workspace.on('file-menu', (menu, file) => {
                 menu.addItem(item => {
