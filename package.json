@@ -109,6 +109,7 @@
     "cursor-effects": "^1.0.8",
     "jsonfile": "^6.1.0",
     "obsidian-daily-notes-interface": "^0.9.4",
+    "party-js": "^2.2.0",
     "rrule": "^2.7.1",
     "svelte": "^3.53.1"
   },

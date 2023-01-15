@@ -1,9 +1,8 @@
-import type { EditorPosition, PluginManifest } from 'obsidian';
+import type { EditorPosition, MarkdownFileInfo, PluginManifest } from 'obsidian';
 import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, WorkspaceLeaf, addIcon, setIcon } from 'obsidian';
 import moment from 'moment';
 import type { ExtApp, ExtTFile } from 'types';
 import { EditDetector, OneDay, Tag, UndoHistoryInstance } from 'types';
-import { emojiCursor } from 'cursor-effects';
 import { getAllDailyNotes, getDailyNote, getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
@@ -13,9 +12,9 @@ import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
 import { Example1Modal, Example2Modal, InsertLinkModal } from 'ui/modal/insert-link-modal';
 import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
-import { Emoji } from 'render/Emoji';
+import { codeEmoji } from 'render/Emoji';
+import { buildTagRules } from 'render/Tag';
 import { ReminderModal } from 'ui/reminder';
-// import { AutoComplete } from 'ui/autocomplete';
 import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
 import {
@@ -29,325 +28,23 @@ import {
     WidgetType,
     lineNumbers,
 } from '@codemirror/view';
-import { EditorState, Extension, RangeSetBuilder, StateEffect, StateField, Transaction } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
-
-// setting for rtl support
-class Settings {
-    public fileDirections: { [path: string]: string } = {};
-    public defaultDirection = 'ltr';
-    public rememberPerFile = true;
-    public setNoteTitleDirection = true;
-    public setYamlDirection = false;
-
-    toJson() {
-        return JSON.stringify(this);
-    }
-
-    fromJson(content: string) {
-        const obj = JSON.parse(content);
-        this.fileDirections = obj['fileDirections'];
-        this.defaultDirection = obj['defaultDirection'];
-        this.rememberPerFile = obj['rememberPerFile'];
-        this.setNoteTitleDirection = obj['setNoteTitleDirection'];
-    }
-}
-
-class EmojiListPlugin implements PluginValue {
-    decorations: DecorationSet;
-
-    constructor(view: EditorView) {
-        this.decorations = this.buildDecorations(view);
-    }
-
-    update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) {
-            this.decorations = this.buildDecorations(update.view);
-        }
-    }
-
-    destroy() {
-        // console.log('destory====');
-    }
-
-    buildDecorations(view: EditorView): DecorationSet {
-        const builder = new RangeSetBuilder<Decoration>();
-
-        for (const { from, to } of view.visibleRanges) {
-            syntaxTree(view.state).iterate({
-                from,
-                to,
-                enter(node) {
-                    if (node.type.name.startsWith('list')) {
-                        // Position of the '-' or the '*'.
-                        const listCharFrom = node.from - 2;
-
-                        builder.add(
-                            listCharFrom,
-                            listCharFrom + 1,
-                            Decoration.replace({
-                                widget: new EmojiWidget(),
-                            }),
-                        );
-                    }
-                },
-            });
-        }
-
-        return builder.finish();
-    }
-}
-
-const pluginSpec: PluginSpec<EmojiListPlugin> = {
-    decorations: (value: EmojiListPlugin) => value.decorations,
-};
-
-const emojiListPlugin = ViewPlugin.fromClass(EmojiListPlugin, pluginSpec);
-
-class EmojiWidget extends WidgetType {
-    toDOM(view: EditorView): HTMLElement {
-        const div = document.createElement('span');
-
-        div.innerText = '👉';
-
-        return div;
-    }
-}
+import { DocumentDirectionSettings } from './render/DocumentDirection';
+import { emojiListPlugin } from './render/EmojiList';
+import { destroyBlast, initBlast, onCodeMirrorChange } from './render/Blast';
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
-
-let shakeTime = 0,
-    shakeTimeMax = 0,
-    lastTime = 0,
-    particlePointer = 0,
-    effect,
-    isActive = false,
-    cmNode,
-    canvas,
-    ctx;
-
-const shakeIntensity = 5,
-    particles = [],
-    MAX_PARTICLES = 500,
-    PARTICLE_NUM_RANGE = { min: 5, max: 10 },
-    PARTICLE_GRAVITY = 0.08,
-    PARTICLE_ALPHA_FADEOUT = 0.96,
-    PARTICLE_VELOCITY_RANGE = {
-        x: [-1, 1],
-        y: [-3.5, -1.5],
-    },
-    codemirrors = [],
-    w = window.innerWidth,
-    h = window.innerHeight;
-
-const throttledShake = throttle(shake, 100);
-const throttledSpawnParticles = throttle(spawnParticles, 100);
-
-function getRGBComponents(node) {
-    const color = getComputedStyle(node).color;
-    if (color) {
-        try {
-            return color.match(/(\d+), (\d+), (\d+)/).slice(1);
-        } catch (e) {
-            return [255, 255, 255];
-        }
-    } else {
-        return [255, 255, 255];
-    }
-}
-
-function spawnParticles(cm, type) {
-    const cursorPos = cm.getCursor();
-    const pos = cm.coordsAtPos(cursorPos);
-    const node = document.elementFromPoint(pos.left - 5, pos.top + 5);
-    type = cm.wordAt(cursorPos);
-    if (type) {
-        type = type.type;
-    }
-    const numParticles = random(PARTICLE_NUM_RANGE.min, PARTICLE_NUM_RANGE.max);
-    const color = getRGBComponents(node);
-
-    for (let i = numParticles; i--; ) {
-        particles[particlePointer] = createParticle(pos.left + 10, pos.top, color);
-        particlePointer = (particlePointer + 1) % MAX_PARTICLES;
-    }
-}
-
-function createParticle(x, y, color) {
-    const p = {
-        x: x,
-        y: y + 10,
-        alpha: 1,
-        color: color,
-    };
-    if (effect === 1) {
-        p.size = random(2, 4);
-        p.vx =
-            PARTICLE_VELOCITY_RANGE.x[0] +
-            Math.random() * (PARTICLE_VELOCITY_RANGE.x[1] - PARTICLE_VELOCITY_RANGE.x[0]);
-        p.vy =
-            PARTICLE_VELOCITY_RANGE.y[0] +
-            Math.random() * (PARTICLE_VELOCITY_RANGE.y[1] - PARTICLE_VELOCITY_RANGE.y[0]);
-    } else if (effect === 2) {
-        p.size = random(2, 8);
-        p.drag = 0.92;
-        p.vx = random(-3, 3);
-        p.vy = random(-3, 3);
-        p.wander = 0.15;
-        p.theta = (random(0, 360) * Math.PI) / 180;
-    }
-    return p;
-}
-
-function effect1(particle) {
-    particle.vy += PARTICLE_GRAVITY;
-    particle.x += particle.vx;
-    particle.y += particle.vy;
-
-    particle.alpha *= PARTICLE_ALPHA_FADEOUT;
-
-    ctx.fillStyle =
-        'rgba(' + particle.color[0] + ',' + particle.color[1] + ',' + particle.color[2] + ',' + particle.alpha + ')';
-    ctx.fillRect(Math.round(particle.x - 1), Math.round(particle.y - 1), particle.size, particle.size);
-}
-
-// Effect based on Soulwire's demo: http://codepen.io/soulwire/pen/foktm
-function effect2(particle) {
-    particle.x += particle.vx;
-    particle.y += particle.vy;
-    particle.vx *= particle.drag;
-    particle.vy *= particle.drag;
-    particle.theta += random(-0.5, 0.5);
-    particle.vx += Math.sin(particle.theta) * 0.1;
-    particle.vy += Math.cos(particle.theta) * 0.1;
-    particle.size *= 0.96;
-
-    ctx.fillStyle =
-        'rgba(' + particle.color[0] + ',' + particle.color[1] + ',' + particle.color[2] + ',' + particle.alpha + ')';
-    ctx.beginPath();
-    ctx.arc(Math.round(particle.x - 1), Math.round(particle.y - 1), particle.size, 0, 2 * Math.PI);
-    ctx.fill();
-}
-
-function drawParticles() {
-    let particle;
-    for (let i = particles.length; i--; ) {
-        particle = particles[i];
-        if (!particle || particle.alpha < 0.01 || particle.size <= 0.5) {
-            continue;
-        }
-
-        if (effect === 1) {
-            effect1(particle);
-        } else if (effect === 2) {
-            effect2(particle);
-        }
-    }
-}
-
-function shake(editor: Editor, time) {
-    window.editor = editor;
-    // cmNode = editor.cm;
-    cmNode = editor.containerEl;
-    shakeTime = shakeTimeMax = time;
-}
-
-function random(min, max) {
-    if (!max) {
-        max = min;
-        min = 0;
-    }
-    return min + ~~(Math.random() * (max - min + 1));
-}
-
-function throttle(callback, limit) {
-    let wait = false;
-    return function () {
-        if (!wait) {
-            // eslint-disable-next-line prefer-rest-params
-            callback.apply(this, arguments);
-            wait = true;
-            setTimeout(function () {
-                wait = false;
-            }, limit);
-        }
-    };
-}
-
-function loop() {
-    if (!isActive) {
-        return;
-    }
-
-    ctx.clearRect(0, 0, w, h);
-
-    // get the time past the previous frame
-    const current_time = new Date().getTime();
-    if (!lastTime) lastTime = current_time;
-    const dt = (current_time - lastTime) / 1000;
-    lastTime = current_time;
-    if (shakeTime > 0) {
-        shakeTime -= dt;
-        const magnitude = (shakeTime / shakeTimeMax) * shakeIntensity;
-        const shakeX = random(-magnitude, magnitude);
-        const shakeY = random(-magnitude, magnitude);
-        cmNode.style.transform = 'translate(' + shakeX + 'px,' + shakeY + 'px)';
-    }
-    drawParticles();
-    requestAnimationFrame(loop);
-}
-
-function onCodeMirrorChange(editor) {
-    // eslint-disable-next-line no-constant-condition
-    if (1 == 1) {
-        // editor.getOption('blastCode') === true || editor.getOption('blastCode').shake === undefined
-        throttledShake(editor, 0.3);
-    }
-    throttledSpawnParticles(editor);
-}
-
-function init(editor) {
-    isActive = true;
-
-    if (!canvas) {
-        canvas = document.createElement('canvas');
-        (ctx = canvas.getContext('2d')), (canvas.id = 'code-blast-canvas');
-        canvas.style.position = 'absolute';
-        canvas.style.top = 0;
-        canvas.style.left = 0;
-        canvas.style.zIndex = 1;
-        canvas.style.pointerEvents = 'none';
-        canvas.width = w;
-        canvas.height = h;
-
-        document.body.appendChild(canvas);
-        loop();
-    }
-}
-
-function destroy(editor) {
-    codemirrors.splice(codemirrors.indexOf(editor), 1);
-    if (!codemirrors.length) {
-        isActive = false;
-        if (canvas) {
-            canvas.remove();
-            canvas = null;
-        }
-    }
-}
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
     pluginDataIO: PluginDataIO;
     public SETTINGS_PATH = '.obsidian/rtl.json';
-    public settings = new Settings();
+    public docDirSettings = new DocumentDirectionSettings();
     private currentFile: TFile;
     private undoHistory: any[];
     private undoHistoryTime: Date;
     private remindersController: RemindersController;
     private editDetector: EditDetector;
     private reminderModal: ReminderModal;
-    // private autoComplete: AutoComplete;
     private reminders: Reminders;
     pasteFunction: (evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView) => any;
     customSnippetPath: string;
@@ -379,43 +76,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     addTag(tag: Tag) {
         if (!tag) return;
-        const rules = [
-            `body.tag-pill-outlined .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-hashtag.cm-meta.cm-hashtag-end:is(.cm-tag-important,.cm-tag-complete,.cm-tag-ideas,.cm-tag-${tag.type},.cm-tag-weeklynote,.cm-tag-dailynote,.cm-tag-inprogress):not(.cm-formatting-hashtag) {
-                border-top: var(--tag-border-width) solid var(--tag1);
-                border-bottom: var(--tag-border-width) solid var(--tag1);
-            }`,
-            `body:not(.tag-default) .tag[href ^="#${tag.type}"]:not(.token) {
-                background-color: var(--tag-${tag.type}-bg) !important;
-                font-weight: 600;
-                font-family: ${tag.font.fontFamily} !important;
-                color: ${tag.color} !important;
-                filter: hue-rotate(0) !important;
-            }`,
-            `body:not(.tag-default) .tag[href^="#${tag.type}"]::after {
-                content: ' ❓';
-                font-size: var(--font-size-emoji-after-tag);
-            }`,
-            `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-tag-${tag.type}:not(.cm-formatting-hashtag)::after {
-                content: ' ❓';
-            }`,
-            `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-hashtag.cm-meta.cm-hashtag-end.cm-tag-${tag.type}:not(.cm-formatting-hashtag) {
-                font-family: ${tag.font.fontFamily} !important;
-                font-weight: 600;
-                background-color: ${tag.bgColor} !important;
-                color: ${tag.color} !important;
-                font-size: ${tag.font.size};
-                filter: hue-rotate(0) !important;
-            }`,
-            `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) .cm-formatting.cm-formatting-hashtag.cm-hashtag.cm-hashtag-begin.cm-meta.cm-tag-${tag.type} {
-                font-weight: 600;
-                font-family: ${tag.font.fontFamily} !important;
-                display: inline;
-                color: ${tag.color} !important;
-                background-color: ${tag.bgColor} !important;
-                filter: hue-rotate(0) !important;
-                --callout-icon: ${tag.icon.name};  /* Icon name from the Obsidian Icon Set */
-            }`,
-        ];
+        const rules = buildTagRules(tag);
         rules.forEach(rule => this.style.sheet?.insertRule(rule, this.style.sheet.cssRules.length));
         this.updateSnippet();
     }
@@ -527,6 +188,8 @@ export default class ObsidianManagerPlugin extends Plugin {
         // Rollover can be called, but we need to get the daily file
         if (file == undefined) {
             const allDailyNotes = getAllDailyNotes();
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             file = getDailyNote(moment(), allDailyNotes);
             ignoreCreationTime = true;
         }
@@ -710,30 +373,11 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onload(): Promise<void> {
-        this.registerEditorExtension(lineNumbers());
-        this.registerEditorExtension(emojiListPlugin);
-        const editor = this.app.workspace.activeEditor;
-        codemirrors.push(editor);
-        effect = 2;
-        init(editor);
         this.setupUI();
         this.setupCommands();
-        this.registerMarkdownPostProcessor((element, context) => {
-            const codeblocks = element.querySelectorAll('code');
-            for (let index = 0; index < codeblocks.length; index++) {
-                const codeblock = codeblocks.item(index);
-                const text = codeblock.innerText.trim();
-                const isEmoji = text[0] === ':' && text[text.length - 1] === ':';
-
-                if (isEmoji) {
-                    // highlight-next-line
-                    context.addChild(new Emoji(codeblock, text));
-                }
-            }
-        });
+        this.registerMarkdownPostProcessor(codeEmoji);
         this.app.workspace.onLayoutReady(async () => {
             await this.pluginDataIO.load();
-            toggleDebugEnable(SETTINGS.debugEnable.value);
             if (this.pluginDataIO.debug.value) {
                 monkeyPatchConsole(this);
             }
@@ -849,7 +493,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onunload(): Promise<void> {
-        destroy(this.app.workspace.activeEditor?.editor);
+        destroyBlast();
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
         this.style.detach();
     }
@@ -864,6 +508,14 @@ export default class ObsidianManagerPlugin extends Plugin {
                 //     Logger.warn(...args);
                 // };
                 // new Example1Modal(this.app).open();
+            },
+        });
+
+        this.addCommand({
+            id: 'toggle-debug',
+            name: 'Toggle debug',
+            callback: () => {
+                toggleDebugEnable();
             },
         });
 
@@ -897,7 +549,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             id: 'obsidian-manager-addMyTag',
             name: 'Add MyTag',
             callback: () => {
-                this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
+                this.addMyTag();
             },
         });
 
@@ -934,14 +586,14 @@ export default class ObsidianManagerPlugin extends Plugin {
     toggleDocumentDirection() {
         const newDirection = this.getDocumentDirection() === 'ltr' ? 'rtl' : 'ltr';
         this.setDocumentDirection(newDirection);
-        if (this.settings.rememberPerFile && this.currentFile && this.currentFile.path) {
-            this.settings.fileDirections[this.currentFile.path] = newDirection;
+        if (this.docDirSettings.rememberPerFile && this.currentFile && this.currentFile.path) {
+            this.docDirSettings.fileDirections[this.currentFile.path] = newDirection;
             this.saveSettings();
         }
     }
 
     saveSettings() {
-        const settings = this.settings.toJson();
+        const settings = this.docDirSettings.toJson();
         this.app.vault.adapter.write(this.SETTINGS_PATH, settings);
     }
 
@@ -994,9 +646,11 @@ export default class ObsidianManagerPlugin extends Plugin {
             true,
         );
 
-        if (this.settings.setNoteTitleDirection) {
+        if (this.docDirSettings.setNoteTitleDirection) {
             const container = view.containerEl.parentElement;
-            const header = container.getElementsByClassName('view-header-title-container');
+            const header = container?.getElementsByClassName(
+                'view-header-title-container',
+            ) as HTMLCollectionOf<Element>;
             (header[0] as HTMLDivElement).style.direction = newDirection;
         }
 
@@ -1010,9 +664,9 @@ export default class ObsidianManagerPlugin extends Plugin {
     setDocumentDirectionForEditorDiv(editorDiv: HTMLDivElement, newDirection: string) {
         editorDiv.style.direction = newDirection;
         if (newDirection === 'rtl') {
-            editorDiv.parentElement.classList.add('is-rtl');
+            editorDiv.parentElement?.classList.add('is-rtl');
         } else {
-            editorDiv.parentElement.classList.remove('is-rtl');
+            editorDiv.parentElement?.classList.remove('is-rtl');
         }
     }
 
@@ -1021,7 +675,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         // Although Obsidian doesn't care about is-rtl in Markdown preview, we use it below for some more formatting
         if (newDirection === 'rtl') readingDiv.classList.add('is-rtl');
         else readingDiv.classList.remove('is-rtl');
-        if (this.settings.setYamlDirection)
+        if (this.docDirSettings.setYamlDirection)
             this.replacePageStyleByString(
                 'Patch YAML',
                 '/* Patch YAML RTL */ .is-rtl .language-yaml code { text-align: right; }',
@@ -1061,13 +715,14 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private setupUI() {
-        // 输入特效，power mode, 参考https://github.com/codeinthedark/awesome-power-mode
-        // 鼠标特效，增加开启关闭入口
-        // new emojiCursor({ emoji: ['🔥', '🐬', '🦆'] });
+        this.registerEditorExtension(lineNumbers());
+        this.registerEditorExtension(emojiListPlugin);
+        // input power mode
+        initBlast();
         // 状态栏图标
         const obsidianManagerStatusBar = this.addStatusBarItem();
         // obsidianManagerStatusBar.createEl('span', { text: '🍎' });
-        setIcon(obsidianManagerStatusBar, 'swords', 14);
+        setIcon(obsidianManagerStatusBar, 'swords');
         // 自定义图标
         // addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 设置选项卡
@@ -1092,7 +747,17 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private watchVault() {
+        // TODO partyjs
+        window.onclick = () => {
+            // xx
+        };
         [
+            // this.app.workspace.on('click', (evt: MouseEvent) => {
+            //     console.log('click');
+            // }),
+            this.app.workspace.on('resize', () => {
+                console.log('resize');
+            }),
             this.app.workspace.on('editor-change', (editor: Editor) => {
                 onCodeMirrorChange(editor);
             }),
@@ -1106,15 +771,18 @@ export default class ObsidianManagerPlugin extends Plugin {
                         });
                 });
             }),
-            this.app.workspace.on('editor-menu', (menu, editor, view) => {
-                menu.addItem(item => {
-                    item.setTitle('Start a pomodoro timer 👈')
-                        .setIcon('document')
-                        .onClick(async () => {
-                            new Notice(view.file.path);
-                        });
-                });
-            }),
+            this.app.workspace.on(
+                'editor-menu',
+                (menu: Menu, editor: Editor, view: MarkdownView | MarkdownFileInfo) => {
+                    menu.addItem(item => {
+                        item.setTitle('Start a pomodoro timer 👈')
+                            .setIcon('document')
+                            .onClick(async () => {
+                                new Notice(view.file?.path || 'xxx');
+                            });
+                    });
+                },
+            ),
             this.app.vault.on('create', async file => {
                 // TODO 增加开关，决定是否自动rollover
                 // this.rollover(file as TFile);

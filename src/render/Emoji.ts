@@ -1,6 +1,5 @@
-import { MarkdownRenderChild } from 'obsidian';
+import { MarkdownPostProcessorContext, MarkdownRenderChild } from 'obsidian';
 
-// highlight-next-line
 export class Emoji extends MarkdownRenderChild {
     static ALL_EMOJIS: Record<string, string> = {
         ':+1:': '👍',
@@ -17,11 +16,22 @@ export class Emoji extends MarkdownRenderChild {
     }
 
     onload() {
-        // highlight-start
         const emojiEl = this.containerEl.createSpan({
             text: Emoji.ALL_EMOJIS[this.text] ?? this.text,
         });
         this.containerEl.replaceWith(emojiEl);
-        // highlight-end
+    }
+}
+
+export function codeEmoji(el: HTMLElement, ctx: MarkdownPostProcessorContext) {
+    const codeblocks = el.querySelectorAll('code');
+    for (let index = 0; index < codeblocks.length; index++) {
+        const codeblock = codeblocks.item(index);
+        const text = codeblock.innerText.trim();
+        const isEmoji = text[0] === ':' && text[text.length - 1] === ':';
+
+        if (isEmoji) {
+            ctx.addChild(new Emoji(codeblock, text));
+        }
     }
 }

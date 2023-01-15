@@ -39,7 +39,10 @@ export default class Logger {
     }
 }
 
-export const toggleDebugEnable = value => {
-    console.error('====================' + value);
+export function toggleDebugEnable() {
+    setDebugEnable(!debugEnable);
+}
+
+export function setDebugEnable(value: boolean) {
     debugEnable = value;
-};
+}
