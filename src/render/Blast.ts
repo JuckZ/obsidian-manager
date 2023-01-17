@@ -21,8 +21,11 @@ const shakeIntensity = 5,
         x: [-1, 1],
         y: [-3.5, -1.5],
     },
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    titleBarHeight = document.getElementsByClassName('titlebar')[0].innerHeight,
     w = window.innerWidth,
-    h = window.innerHeight;
+    h = window.innerHeight - titleBarHeight;
 
 const throttledShake = throttle(shake, 100);
 const throttledSpawnParticles = throttle(spawnParticles, 100);
@@ -44,7 +47,7 @@ function spawnParticles(cm, type) {
     const cursorPos = cm.getCursor();
     const pos = cm.coordsAtPos(cursorPos);
     const node = document.elementFromPoint(pos.left - 5, pos.top + 5);
-    heartBeat(node);
+    // heartBeat(node);
     type = cm.wordAt(cursorPos);
     if (type) {
         type = type.type;
@@ -53,7 +56,7 @@ function spawnParticles(cm, type) {
     const color = getRGBComponents(node);
 
     for (let i = numParticles; i--; ) {
-        particles[particlePointer] = createParticle(pos.left + 10, pos.top, color);
+        particles[particlePointer] = createParticle(pos.left + 10, pos.top - titleBarHeight, color);
         particlePointer = (particlePointer + 1) % MAX_PARTICLES;
     }
 }
@@ -205,7 +208,7 @@ export function initBlast() {
         canvas = document.createElement('canvas');
         (ctx = canvas.getContext('2d')), (canvas.id = 'code-blast-canvas');
         canvas.style.position = 'absolute';
-        canvas.style.top = 0;
+        canvas.style.top = '40px';
         canvas.style.left = 0;
         canvas.style.zIndex = 1;
         canvas.style.pointerEvents = 'none';

@@ -412,6 +412,10 @@ export default class ObsidianManagerPlugin extends Plugin {
         evt.preventDefault();
         const newText = evt.clipboardData?.getData('text/plain') || 'lalala';
         const text = editor.getValue();
+        const lineValue = editor.getLine(editor.getCursor().line);
+        // if (lineValue.trimStart().startsWith('- [ ]') && newText.trimStart().startsWith('- [ ]')) {
+        //     newText = newText.replace('- [ ]', '');
+        // }
         const start = text.indexOf(clipboardText);
         if (start < 0) {
             Logger.log(`Unable to find text "${clipboardText}" in current editor`);
@@ -828,7 +832,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     private setupUI() {
         this.registerEditorExtension(lineNumbers());
-        this.registerEditorExtension(emojiListPlugin);
+        // this.registerEditorExtension(emojiListPlugin);
         // input power mode
         initBlast();
         // 状态栏图标
