@@ -23,7 +23,8 @@ const shakeIntensity = 5,
     },
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    titleBarHeight = document.getElementsByClassName('titlebar')[0].innerHeight,
+    // TODO document.getElementsByClassName('titlebar')[0].innerHeight
+    titleBarHeight = 40,
     w = window.innerWidth,
     h = window.innerHeight - titleBarHeight;
 
@@ -208,7 +209,7 @@ export function initBlast() {
         canvas = document.createElement('canvas');
         (ctx = canvas.getContext('2d')), (canvas.id = 'code-blast-canvas');
         canvas.style.position = 'absolute';
-        canvas.style.top = '40px';
+        canvas.style.top = `${titleBarHeight}px`;
         canvas.style.left = 0;
         canvas.style.zIndex = 1;
         canvas.style.pointerEvents = 'none';
