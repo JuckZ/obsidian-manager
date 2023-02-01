@@ -1,4 +1,4 @@
-// import { dispatchDatabaseFileChanged } from "dispatch/mdb";
+import { dispatchDatabaseFileChanged } from 'dispatch/mdb';
 import type ObsidianManagerPlugin from 'main';
 import { FileSystemAdapter, normalizePath } from 'obsidian';
 import type { Database, QueryExecResult, SqlJsStatic } from 'sql.js';
@@ -209,8 +209,7 @@ export const saveDBToPath = async (plugin: ObsidianManagerPlugin, path: string, 
     const db = await getDB(sqlJS, path);
     replaceDB(db, tables);
     await saveDBFile(path, db.export().buffer);
-    // TODO
-    // dispatchDatabaseFileChanged(path);
+    dispatchDatabaseFileChanged(path);
     db.close();
     return true;
 };

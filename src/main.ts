@@ -7,10 +7,30 @@ import {
     WorkspaceWindow,
     normalizePath,
 } from 'obsidian';
-import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, WorkspaceLeaf, addIcon, setIcon } from 'obsidian';
+import {
+    App,
+    Editor,
+    MarkdownView,
+    Menu,
+    Notice,
+    Plugin,
+    TFile,
+    WorkspaceLeaf,
+    addIcon,
+    debounce,
+    setIcon,
+} from 'obsidian';
 import moment from 'moment';
 import type { ExtApp, ExtTFile } from 'types';
 import { EditDetector, OneDay, Tag, UndoHistoryInstance } from 'types';
+import {
+    FocusPortalEvent,
+    LoadPortalEvent,
+    OpenFilePortalEvent,
+    SpawnPortalEvent,
+    VaultChange,
+    eventTypes,
+} from 'types/types';
 import { getAllDailyNotes, getDailyNote, getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
@@ -27,7 +47,8 @@ import { ReminderModal } from 'ui/reminder';
 import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
 import { getNotePath } from 'utils/file';
-import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, selectDB } from 'utils/db/db';
+import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, saveDBToPath, selectDB } from 'utils/db/db';
+import { insertAfterHandler } from 'utils/content';
 import { loadSQL } from 'utils/db/sqljs';
 import { initiateDB } from 'utils/promotodo';
 import type { Database } from 'sql.js';
@@ -184,20 +205,37 @@ export default class ObsidianManagerPlugin extends Plugin {
         return sqljs;
     }
 
+    mdbChange(e: any) {
+        console.log(this, e);
+    }
+
+    saveSpacesDB = debounce(() => saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath), 1000, true);
+
+    spaceDBInstance() {
+        return this.spaceDB;
+    }
+
     async test() {
         this.spacesDBPath = normalizePath(app.vault.configDir + '/plugins/obsidian-manager/ObsidianManager.mdb');
         this.spaceDB = await getDB(await loadSQL(), this.spacesDBPath);
         initiateDB(this.spaceDB);
-        saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
+        // saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
         console.log(this.spaceDB, this.spacesDBPath);
-        insertIntoDB(this.spaceDB, {
+        // insertIntoDB(this.spaceDB, {
+        //     vault: {
+        //         uniques: ['path'],
+        //         cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
+        //         rows: [{ path: 'xxx' }, { path: 'xxx2' }],
+        //     },
+        // });
+        await saveDBToPath(this, this.spacesDBPath, {
             vault: {
                 uniques: ['path'],
                 cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
-                rows: [{ path: 'xxx' }, { path: 'xxx2' }],
+                rows: [{ path: 'xxx3' }, { path: 'xxx4' }],
             },
         });
-        console.log(selectDB(this.spaceDB, 'vault'));
+        console.log(selectDB(this.spaceDBInstance(), 'vault'));
     }
 
     get snippetPath() {
@@ -692,17 +730,35 @@ export default class ObsidianManagerPlugin extends Plugin {
     private async addACheck(path, filename, time, content) {
         const normalizedPath = await getNotePath(path, filename);
         const todayMoment = moment();
-        app.vault.adapter.append(normalizedPath, `\n- [ ] ${time} ${content} ⏳ ${todayMoment.format('YYYY-MM-DD')}`);
+        const fileContents = await app.vault.adapter.read(normalizedPath);
+        const newFileContent = await insertAfterHandler(
+            '## 打卡',
+            `- [ ] ${time} ${content} ⏳ ${todayMoment.format('YYYY-MM-DD')}`,
+            fileContents,
+        );
+        await app.vault.adapter.write(normalizedPath, newFileContent.content);
     }
 
-    private async removeACheck(path, filename) {
-        // TODO
+    private async removeACheck(path, filename, time, content) {
+        const normalizedPath = await getNotePath(path, filename);
+        const todayMoment = moment();
+        const fileContents = await app.vault.adapter.read(normalizedPath);
+        const originalLine = `- [ ] ${time} ${content} ⏳ ${todayMoment.format('YYYY-MM-DD')}`;
+        const newContent = fileContents.replace(originalLine, '');
+        await app.vault.adapter.write(normalizedPath, newContent);
     }
 
     private async habitCheckIn() {
         checkInList.forEach(habit => {
             const { path, filename, time, content } = habit;
             this.addACheck(path || checkInDefaultPath, filename, time, content);
+        });
+    }
+
+    private async removeHabitCheckIn() {
+        checkInList.forEach(habit => {
+            const { path, filename, time, content } = habit;
+            this.removeACheck(path || checkInDefaultPath, filename, time, content);
         });
     }
 
@@ -730,6 +786,14 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Habit Check In',
             callback: () => {
                 this.habitCheckIn();
+            },
+        });
+
+        this.addCommand({
+            id: 'obsidian-manager-remove-check-in',
+            name: 'Remove Habit Check In',
+            callback: () => {
+                this.removeHabitCheckIn();
             },
         });
 
@@ -993,6 +1057,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private watchVault() {
+        window.addEventListener(eventTypes.mdbChange, this.mdbChange.bind(this));
         // TODO partyjs
         window.onclick = () => {
             // xx

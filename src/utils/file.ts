@@ -1,3 +1,4 @@
+import { App, TFolder } from 'obsidian';
 import * as obsidian from 'obsidian';
 
 export async function getNotePath(directory, filename) {
@@ -34,3 +35,17 @@ async function ensureFolderExists(path) {
         }
     }
 }
+
+export const getAbstractFileAtPath = (app: App, path: string) => {
+    return app.vault.getAbstractFileByPath(path);
+};
+
+export const getFolderFromPath = (app: App, path: string): TFolder | null => {
+    if (!path) return null;
+    const file = path.slice(-1) == '/' ? path.substring(0, path.length - 1) : path;
+    const afile = getAbstractFileAtPath(app, file);
+    if (!afile) return null;
+    return afile instanceof TFolder ? afile : afile.parent;
+};
+
+export const getFolderPathFromString = (file: string) => getFolderFromPath(app, file)?.path;
