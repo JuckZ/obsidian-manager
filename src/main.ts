@@ -206,7 +206,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     mdbChange(e: any) {
-        console.log(this, e);
+        // console.log(this, e);
     }
 
     saveSpacesDB = debounce(() => saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath), 1000, true);
@@ -215,26 +215,26 @@ export default class ObsidianManagerPlugin extends Plugin {
         return this.spaceDB;
     }
 
-    async test() {
-        this.spacesDBPath = normalizePath(app.vault.configDir + '/plugins/obsidian-manager/ObsidianManager.mdb');
-        this.spaceDB = await getDB(await loadSQL(), this.spacesDBPath);
-        initiateDB(this.spaceDB);
-        // saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
-        console.log(this.spaceDB, this.spacesDBPath);
-        // insertIntoDB(this.spaceDB, {
-        //     vault: {
-        //         uniques: ['path'],
-        //         cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
-        //         rows: [{ path: 'xxx' }, { path: 'xxx2' }],
-        //     },
-        // });
-        await saveDBToPath(this, this.spacesDBPath, {
-            vault: {
-                uniques: ['path'],
-                cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
-                rows: [{ path: 'xxx3' }, { path: 'xxx4' }],
+    async startPomodoro(task: string) {
+        const start = moment().format('YYYY-MM-DD HH:mm:ss');
+        insertIntoDB(this.spaceDB, {
+            // vault: {
+            //     uniques: ['path'],
+            //     cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
+            //     rows: [{ path: new Date().getTime() + 'p' }, { path: new Date().getTime() + 1 + 'p' }],
+            // },
+            pomodoro: {
+                uniques: ['timestamp'],
+                cols: ['timestamp', 'task', 'start', 'end', 'spend', 'status'],
+                rows: [{ timestamp: new Date().getTime() + '', task, start, status: 'ing' }],
             },
         });
+        new Notice(`开始执行：${task}`);
+        saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
+        console.log(selectDB(this.spaceDBInstance(), 'pomodoro'));
+    }
+
+    async test() {
         console.log(selectDB(this.spaceDBInstance(), 'vault'));
     }
 
@@ -525,10 +525,20 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     async customizeEditorMenu(menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
         menu.addItem(item => {
-            item.setTitle('Start a pomodoro timer 👈')
-                .setIcon('document')
+            item.setTitle('Start a pomodoro')
+                .setIcon('clock')
                 .onClick(async () => {
-                    new Notice(info.file?.path || 'xxx');
+                    const cursorPos = editor.getCursor();
+                    const currentPosition = editor.wordAt(cursorPos);
+                    let task = editor.getSelection();
+                    if (!task) {
+                        if (currentPosition) {
+                            task = editor.getLine(currentPosition.from.line);
+                        } else {
+                            task = '默认任务';
+                        }
+                    }
+                    this.startPomodoro(task);
                 });
         });
     }
@@ -621,6 +631,16 @@ export default class ObsidianManagerPlugin extends Plugin {
             this.style = document.head.createEl('style', {
                 attr: { id: 'OBSIDIAN_MANAGER_CUSTOM_STYLE_SHEET' },
             });
+            this.spacesDBPath = normalizePath(app.vault.configDir + '/plugins/obsidian-manager/ObsidianManager.mdb');
+            this.spaceDB = await getDB(await loadSQL(), this.spacesDBPath);
+            const tables = dbResultsToDBTables(
+                this.spaceDBInstance().exec(
+                    "SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';",
+                ),
+            );
+            if (tables.length == 0) {
+                initiateDB(this.spaceDBInstance());
+            }
         });
     }
 
@@ -1064,11 +1084,11 @@ export default class ObsidianManagerPlugin extends Plugin {
         };
         [
             this.app.workspace.on('click', this.clickFunction),
-            this.app.workspace.on('resize', this.customizeResize),
-            this.app.workspace.on('editor-change', this.customizeEditorChange),
+            this.app.workspace.on('resize', this.resizeFunction),
+            this.app.workspace.on('editor-change', this.editorChangeFunction),
             this.app.workspace.on('editor-paste', this.editorPasteFunction),
             this.app.workspace.on('file-menu', this.fileMenuFunction),
-            this.app.workspace.on('editor-menu', this.customizeEditorMenu),
+            this.app.workspace.on('editor-menu', this.editorMenuFunction),
             this.app.vault.on('create', this.vaultCreateFunction),
             this.app.vault.on('modify', this.vaultModifyFunction),
             this.app.vault.on('delete', this.vaultDeleteFunction),
