@@ -39,7 +39,7 @@ import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
 import { Example1Modal, Example2Modal, InsertLinkModal } from 'ui/modal/insert-link-modal';
-import { ExampleView, VIEW_TYPE_EXAMPLE } from 'ui/ExampleView';
+import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/PomodoroHistoryView';
 import { codeEmoji } from 'render/Emoji';
 import { disableCursorEffect, effects, enableCursorEffect } from 'render/CursorEffects';
 import { buildTagRules } from 'render/Tag';
@@ -206,7 +206,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     mdbChange(e: any) {
-        // console.log(this, e);
+        console.log(this, e);
     }
 
     saveSpacesDB = debounce(() => saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath), 1000, true);
@@ -231,6 +231,8 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
         new Notice(`开始执行：${task}`);
         saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
+        const evt = new CustomEvent(eventTypes.pomodoroChange, { detail: { task, start } });
+        window.dispatchEvent(evt);
         console.log(selectDB(this.spaceDBInstance(), 'pomodoro'));
     }
 
@@ -492,13 +494,12 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async activateView() {
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
-
+        this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
         await this.app.workspace.getRightLeaf(false).setViewState({
-            type: VIEW_TYPE_EXAMPLE,
+            type: POMODORO_HISTORY_VIEW,
             active: true,
         });
-        this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE)[0] as WorkspaceLeaf);
+        this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(POMODORO_HISTORY_VIEW)[0] as WorkspaceLeaf);
     }
 
     public static getEditorPositionFromIndex(content: string, index: number): EditorPosition {
@@ -621,6 +622,17 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.setupUI();
         this.setupCommands();
         this.registerMarkdownPostProcessor(codeEmoji);
+
+        this.spacesDBPath = normalizePath(app.vault.configDir + '/plugins/obsidian-manager/ObsidianManager.mdb');
+        this.spaceDB = await getDB(await loadSQL(), this.spacesDBPath);
+        const tables = dbResultsToDBTables(
+            this.spaceDBInstance().exec(
+                "SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';",
+            ),
+        );
+        if (tables.length == 0) {
+            initiateDB(this.spaceDBInstance());
+        }
         this.app.workspace.onLayoutReady(async () => {
             await this.pluginDataIO.load();
             if (this.pluginDataIO.debug.value) {
@@ -631,16 +643,6 @@ export default class ObsidianManagerPlugin extends Plugin {
             this.style = document.head.createEl('style', {
                 attr: { id: 'OBSIDIAN_MANAGER_CUSTOM_STYLE_SHEET' },
             });
-            this.spacesDBPath = normalizePath(app.vault.configDir + '/plugins/obsidian-manager/ObsidianManager.mdb');
-            this.spaceDB = await getDB(await loadSQL(), this.spacesDBPath);
-            const tables = dbResultsToDBTables(
-                this.spaceDBInstance().exec(
-                    "SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%';",
-                ),
-            );
-            if (tables.length == 0) {
-                initiateDB(this.spaceDBInstance());
-            }
         });
     }
 
@@ -784,7 +786,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     override async onunload(): Promise<void> {
         destroyBlast();
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+        this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
         this.style.detach();
     }
 
@@ -1059,8 +1061,8 @@ export default class ObsidianManagerPlugin extends Plugin {
         // addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 设置选项卡
         this.addSettingTab(new ReminderSettingTab(this.app, this, this.pluginDataIO));
-        this.registerView(VIEW_TYPE_EXAMPLE, leaf => new ExampleView(leaf));
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+        this.registerView(POMODORO_HISTORY_VIEW, leaf => new PomodoroHistoryView(leaf, this));
+        this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
         // 左侧菜单，使用自定义图标
         this.addRibbonIcon('swords', 'Obsidian Manager', event => {
             const menu = new Menu();
