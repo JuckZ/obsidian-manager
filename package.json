@@ -70,6 +70,7 @@
     "@tsconfig/svelte": "^3.0.0",
     "@types/jest": "^29.2.2",
     "@types/node": "^16.11.6",
+    "@types/sql.js": "^1.4.4",
     "@typescript-eslint/eslint-plugin": "5.29.0",
     "@typescript-eslint/parser": "5.29.0",
     "builtin-modules": "3.3.0",
@@ -78,6 +79,7 @@
     "dotenv": "^16.0.3",
     "electron": "^21.2.3",
     "esbuild": "0.14.47",
+    "esbuild-plugin-wat": "^0.2.7",
     "esbuild-sass-plugin": "^2.4.0",
     "esbuild-svelte": "^0.7.3",
     "eslint": "^8.27.0",
@@ -111,6 +113,7 @@
     "obsidian-daily-notes-interface": "^0.9.4",
     "party-js": "^2.2.0",
     "rrule": "^2.7.1",
+    "sql.js": "^1.8.0",
     "svelte": "^3.53.1"
   },
   "repository": {

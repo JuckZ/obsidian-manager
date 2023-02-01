@@ -2,6 +2,7 @@ import process from 'process';
 import esbuild from 'esbuild';
 import builtins from 'builtin-modules';
 import esbuildSvelte from 'esbuild-svelte';
+import watPlugin from 'esbuild-plugin-wat';
 import sveltePreprocess from 'svelte-preprocess';
 import { config } from 'dotenv';
 import { sassPlugin } from 'esbuild-sass-plugin';
@@ -49,6 +50,7 @@ esbuild
         treeShaking: true,
         outdir: dir,
         plugins: [
+            watPlugin(),
             esbuildSvelte({
                 preprocess: sveltePreprocess(),
             }),

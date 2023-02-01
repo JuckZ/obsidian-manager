@@ -1,4 +1,12 @@
-import type { EditorPosition, MarkdownFileInfo, PluginManifest, TAbstractFile, Tasks, WorkspaceWindow } from 'obsidian';
+import {
+    EditorPosition,
+    MarkdownFileInfo,
+    PluginManifest,
+    TAbstractFile,
+    Tasks,
+    WorkspaceWindow,
+    normalizePath,
+} from 'obsidian';
 import { App, Editor, MarkdownView, Menu, Notice, Plugin, TFile, WorkspaceLeaf, addIcon, setIcon } from 'obsidian';
 import moment from 'moment';
 import type { ExtApp, ExtTFile } from 'types';
@@ -18,6 +26,11 @@ import { buildTagRules } from 'render/Tag';
 import { ReminderModal } from 'ui/reminder';
 import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
+import { getNotePath } from 'utils/file';
+import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, selectDB } from 'utils/db/db';
+import { loadSQL } from 'utils/db/sqljs';
+import { initiateDB } from 'utils/promotodo';
+import type { Database } from 'sql.js';
 import {
     Decoration,
     DecorationSet,
@@ -34,6 +47,67 @@ import { emojiListPlugin } from './render/EmojiList';
 import { destroyBlast, initBlast, onCodeMirrorChange } from './render/Blast';
 
 const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
+const checkInDefaultPath = 'Journal/Habit';
+const checkInList = [
+    {
+        filename: 'Get up',
+        content: '[[Get up]] and sit in [[meditation]]',
+        time: '07:00',
+    },
+    {
+        filename: '日记',
+        content: '[[日记|Journal]]',
+        time: '07:30',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'Review',
+        content: '[[Review]]',
+        time: '07:30',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'Breakfast',
+        content: '[[Breakfast]]',
+        time: '08:00',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'leave for work',
+        content: '[[leave for work]]',
+        time: '09:00',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'Launch',
+        content: '[[Launch]] and take a break',
+        time: '12:30',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'Dinner',
+        content: '[[Dinner]] ',
+        time: '18:00',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'Go through today',
+        content: '[[Go through today]]',
+        time: '22:30',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'Plan for tomorrow',
+        content: '[[Plan for tomorrow]]',
+        time: '22:30',
+    },
+    {
+        path: checkInDefaultPath,
+        filename: 'End the day',
+        content: '[[End the day]]',
+        time: '23:00',
+    },
+];
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
@@ -73,6 +147,8 @@ export default class ObsidianManagerPlugin extends Plugin {
     customSnippetPath: string;
     useSnippet = true;
     style: HTMLStyleElement;
+    spacesDBPath: string;
+    spaceDB: Database;
 
     constructor(app: App, manifest: PluginManifest) {
         super(app, manifest);
@@ -99,6 +175,29 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.vaultModifyFunction = this.customizeVaultModify.bind(this);
         this.vaultDeleteFunction = this.customizeVaultDelete.bind(this);
         this.vaultRenameFunction = this.customizeVaultRename.bind(this);
+    }
+
+    async sqlJS() {
+        // console.time("Loading SQlite");
+        const sqljs = await loadSQL();
+        // console.timeEnd("Loading SQlite");
+        return sqljs;
+    }
+
+    async test() {
+        this.spacesDBPath = normalizePath(app.vault.configDir + '/plugins/obsidian-manager/ObsidianManager.mdb');
+        this.spaceDB = await getDB(await loadSQL(), this.spacesDBPath);
+        initiateDB(this.spaceDB);
+        saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
+        console.log(this.spaceDB, this.spacesDBPath);
+        insertIntoDB(this.spaceDB, {
+            vault: {
+                uniques: ['path'],
+                cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
+                rows: [{ path: 'xxx' }, { path: 'xxx2' }],
+            },
+        });
+        console.log(selectDB(this.spaceDB, 'vault'));
     }
 
     get snippetPath() {
@@ -590,6 +689,23 @@ export default class ObsidianManagerPlugin extends Plugin {
         await this.remindersController.openReminder(reminder, leaf);
     }
 
+    private async addACheck(path, filename, time, content) {
+        const normalizedPath = await getNotePath(path, filename);
+        const todayMoment = moment();
+        app.vault.adapter.append(normalizedPath, `\n- [ ] ${time} ${content} ⏳ ${todayMoment.format('YYYY-MM-DD')}`);
+    }
+
+    private async removeACheck(path, filename) {
+        // TODO
+    }
+
+    private async habitCheckIn() {
+        checkInList.forEach(habit => {
+            const { path, filename, time, content } = habit;
+            this.addACheck(path || checkInDefaultPath, filename, time, content);
+        });
+    }
+
     override async onunload(): Promise<void> {
         destroyBlast();
         this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
@@ -606,6 +722,14 @@ export default class ObsidianManagerPlugin extends Plugin {
                 //     Logger.warn(...args);
                 // };
                 // new Example1Modal(this.app).open();
+            },
+        });
+
+        this.addCommand({
+            id: 'obsidian-manager-check-in',
+            name: 'Habit Check In',
+            callback: () => {
+                this.habitCheckIn();
             },
         });
 
@@ -632,6 +756,14 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Disable CursorEffect',
             callback: () => {
                 disableCursorEffect();
+            },
+        });
+
+        this.addCommand({
+            id: 'Test',
+            name: 'test',
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.test();
             },
         });
 
@@ -831,7 +963,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private setupUI() {
-        this.registerEditorExtension(lineNumbers());
+        // this.registerEditorExtension(lineNumbers());
         // this.registerEditorExtension(emojiListPlugin);
         // input power mode
         initBlast();
