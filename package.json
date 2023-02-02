@@ -67,6 +67,7 @@
     "@semantic-release/github": "^8.0.6",
     "@semantic-release/npm": "^9.0.1",
     "@semantic-release/release-notes-generator": "^10.0.3",
+    "@the_tree/esbuild-plugin-vue3": "^0.3.1",
     "@tsconfig/svelte": "^3.0.0",
     "@types/jest": "^29.2.2",
     "@types/node": "^16.11.6",
@@ -79,6 +80,7 @@
     "dotenv": "^16.0.3",
     "electron": "^21.2.3",
     "esbuild": "0.14.47",
+    "esbuild-plugin-vue-next": "^0.1.4",
     "esbuild-plugin-wat": "^0.2.7",
     "esbuild-sass-plugin": "^2.4.0",
     "esbuild-svelte": "^0.7.3",
@@ -86,6 +88,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^9.9.0",
     "husky": "^8.0.2",
     "jest": "^29.3.1",
     "lint-staged": "^13.0.3",
@@ -114,7 +117,8 @@
     "party-js": "^2.2.0",
     "rrule": "^2.7.1",
     "sql.js": "^1.8.0",
-    "svelte": "^3.53.1"
+    "svelte": "^3.53.1",
+    "vue": "^3.2.45"
   },
   "repository": {
     "type": "git",

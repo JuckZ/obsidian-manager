@@ -6,6 +6,8 @@ import watPlugin from 'esbuild-plugin-wat';
 import sveltePreprocess from 'svelte-preprocess';
 import { config } from 'dotenv';
 import { sassPlugin } from 'esbuild-sass-plugin';
+import { default as pluginVue } from 'esbuild-plugin-vue-next';
+import Vue from '@the_tree/esbuild-plugin-vue3';
 
 config();
 
@@ -16,7 +18,6 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = process.argv[2] === 'production';
-
 const dir = process.env.OUTDIR ? process.env.OUTDIR : 'dest';
 
 esbuild
@@ -26,6 +27,7 @@ esbuild
         },
         entryPoints: ['src/main.ts', 'src/styles.css', 'src/bin/order.bin.ts'],
         bundle: true,
+        // drop: prod ? ['console', 'debugger'] : [],
         external: [
             'obsidian',
             'electron',
@@ -51,6 +53,8 @@ esbuild
         outdir: dir,
         plugins: [
             watPlugin(),
+            Vue({ isProd: true }),
+            // pluginVue(),
             esbuildSvelte({
                 preprocess: sveltePreprocess(),
             }),

@@ -530,11 +530,10 @@ export default class ObsidianManagerPlugin extends Plugin {
                 .setIcon('clock')
                 .onClick(async () => {
                     const cursorPos = editor.getCursor();
-                    const currentPosition = editor.wordAt(cursorPos);
                     let task = editor.getSelection();
                     if (!task) {
-                        if (currentPosition) {
-                            task = editor.getLine(currentPosition.from.line);
+                        if (cursorPos) {
+                            task = editor.getLine(cursorPos.line);
                         } else {
                             task = '默认任务';
                         }
@@ -548,22 +547,22 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async customizeEditorPaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
-        // TODO 完善
+        const clipboardText = evt.clipboardData?.getData('text/plain');
         Logger.warn(evt);
-        Logger.dir(evt.clipboardData?.files);
-        const clipboardText = evt.clipboardData?.getData('text/plain') || 'xxx';
-        Logger.warn(clipboardText);
+        // Logger.dir(evt.clipboardData?.files);
+        // Logger.warn(clipboardText);
+        if (!clipboardText) return;
         // evt.clipboardData?.setDragImage
-        await evt.clipboardData?.setData('text/plain', 'Hello, world!');
-        // if (clipboardText == null || clipboardText == '') return;
+        // await evt.clipboardData?.setData('text/plain', 'Hello, world!');
         evt.stopPropagation();
         evt.preventDefault();
-        const newText = evt.clipboardData?.getData('text/plain') || 'lalala';
+        let newLine = clipboardText;
         const text = editor.getValue();
-        const lineValue = editor.getLine(editor.getCursor().line);
-        // if (lineValue.trimStart().startsWith('- [ ]') && newText.trimStart().startsWith('- [ ]')) {
-        //     newText = newText.replace('- [ ]', '');
-        // }
+        const oldLine = editor.getLine(editor.getCursor().line);
+        if (oldLine.trimStart().startsWith('- [ ]') || newLine.trimStart().startsWith('- [ ]')) {
+            const reg = /(\s*- \[ \]\s?)+/;
+            newLine = newLine.replace(reg, '');
+        }
         const start = text.indexOf(clipboardText);
         if (start < 0) {
             Logger.log(`Unable to find text "${clipboardText}" in current editor`);
@@ -571,8 +570,7 @@ export default class ObsidianManagerPlugin extends Plugin {
             const end = start + clipboardText.length;
             const startPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, start);
             const endPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, end);
-            Logger.warn(newText);
-            editor.replaceRange(newText, startPos, endPos);
+            editor.replaceRange(newLine, startPos, endPos);
             return;
         }
     }
