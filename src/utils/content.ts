@@ -114,7 +114,10 @@ export async function insertTextAfterPositionInBody(
 
 export async function setBanner(filepath, oldBanner, newBanner) {
     const fileContents = await app.vault.adapter.read(filepath);
-    const originalLine = `banner: '${oldBanner}'`;
+    let originalLine = `banner: '${oldBanner}'`;
+    if (!fileContents.contains(originalLine)) {
+        originalLine = `banner: "${oldBanner}"`;
+    }
     const newContent = fileContents.replace(originalLine, `banner: '${newBanner}'`);
     await app.vault.adapter.write(filepath, newContent);
     return true;

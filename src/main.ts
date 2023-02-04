@@ -796,45 +796,55 @@ export default class ObsidianManagerPlugin extends Plugin {
     async setRandomBanner(path?: string): Promise<void> {
         const allFilePaths = Object.keys(this.app.metadataCache.fileCache);
         const allMdFilePaths = allFilePaths.filter(
-            key => this.app.metadataCache.fileCache[key]['hash'] && ['Notes'].contains(key.split('/')[0]),
+            key =>
+                this.app.metadataCache.fileCache[key]['hash'] &&
+                ['Notes', 'Journal', 'Inbox', 'Reading', 'MyObsidian', 'Archive'].contains(key.split('/')[0]),
         );
         const allMdFilePathsWithBanner = allMdFilePaths.filter(file => {
             const banner =
                 this.app.metadataCache.metadataCache[this.app.metadataCache.fileCache[file].hash].frontmatter?.banner;
-            if (banner && (banner.startsWith('https://dummyimage') || banner.startsWith('https://images.unsplash'))) {
+            // https://images.pexels
+            //
+            if (
+                banner &&
+                typeof banner == 'string' &&
+                (banner.startsWith('https://dummyimage') ||
+                    banner.startsWith('https://images.unsplash') ||
+                    // banner.startsWith('https://images.pexels') ||
+                    banner.startsWith('/'))
+            ) {
                 return true;
             } else {
                 return false;
             }
         });
-        let time = 0;
         console.log(allMdFilePathsWithBanner);
-        allMdFilePathsWithBanner.forEach(async filePath => {
-            time++;
-            (function (t, file) {
+        let t = 0;
+        allMdFilePathsWithBanner.forEach(async file => {
+            const hash = this.app.metadataCache.fileCache[file].hash;
+            const frontmatter = this.app.metadataCache.metadataCache[hash].frontmatter;
+            const banner = frontmatter?.banner;
+            const title = frontmatter?.title;
+            (function (t, data) {
                 setTimeout(async function () {
-                    const hash = this.app.metadataCache.fileCache[file].hash;
-                    const frontmatter = this.app.metadataCache.metadataCache[hash].frontmatter;
-                    const banner = frontmatter?.banner;
-                    const title = frontmatter?.title;
-                    console.info(title + '进行中' + t);
                     try {
+                        // pixabay pexels
                         const newBanner = await searchPicture('pexels', title);
                         if (newBanner) {
                             const result = await setBanner(file, banner, newBanner);
                             if (result) {
-                                console.info(title + '成功');
+                                console.info(title + '成功' + newBanner);
                             } else {
-                                console.info(title + '失败');
+                                console.info(title + '失败' + result);
                             }
                         }
                     } catch (error) {
                         console.error(title + '错误');
                     }
-                }, 2 * t);
-            })(time, filePath);
+                    console.log(`这是第 ${t} 次，这是其他参数：${data}`);
+                }, 200 * t);
+            })(t++, '其他参数');
         });
-        console.warn('All File Done!!!!\n\n\n\n\n');
     }
 
     private setupCommands() {
@@ -846,13 +856,13 @@ export default class ObsidianManagerPlugin extends Plugin {
         //     },
         // });
 
-        // this.addCommand({
-        //     id: 'set-random-banner-for-all-files',
-        //     name: 'Set Random Banner For All Files',
-        //     callback: async () => {
-        //         this.setRandomBanner();
-        //     },
-        // });
+        this.addCommand({
+            id: 'set-random-banner-for-all-files',
+            name: 'Danger Method!!! Set Random Banner For All Files',
+            callback: async () => {
+                this.setRandomBanner();
+            },
+        });
 
         this.addCommand({
             id: 'switch-text-direction',

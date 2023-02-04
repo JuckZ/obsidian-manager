@@ -4,7 +4,7 @@ import Logger from './logger';
 
 export const createAxiosByinterceptors = (config?: AxiosRequestConfig): AxiosInstance => {
     const instance = axios.create({
-        timeout: 5000,
+        // timeout: 5000,
         // withCredentials: true,
         ...config,
     });
