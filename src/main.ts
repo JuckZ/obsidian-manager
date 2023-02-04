@@ -48,7 +48,8 @@ import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
 import { getNotePath } from 'utils/file';
 import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, saveDBToPath, selectDB } from 'utils/db/db';
-import { insertAfterHandler } from 'utils/content';
+import { insertAfterHandler, setBanner } from 'utils/content';
+import { searchPicture } from 'utils/genBanner';
 import { loadSQL } from 'utils/db/sqljs';
 import { initiateDB } from 'utils/promotodo';
 import type { Database } from 'sql.js';
@@ -63,6 +64,7 @@ import {
     WidgetType,
     lineNumbers,
 } from '@codemirror/view';
+import { imgpath } from 'utils/genBanner';
 import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
 import { destroyBlast, initBlast, onCodeMirrorChange } from './render/Blast';
@@ -547,32 +549,35 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async customizeEditorPaste(evt: ClipboardEvent, editor: Editor, markdownView: MarkdownView): Promise<void> {
-        const clipboardText = evt.clipboardData?.getData('text/plain');
-        Logger.warn(evt);
+        return;
+        // const clipboardText = evt.clipboardData?.getData('text/plain');
+        // if (!clipboardText) return;
+
+        // Logger.warn(evt);
         // Logger.dir(evt.clipboardData?.files);
         // Logger.warn(clipboardText);
-        if (!clipboardText) return;
         // evt.clipboardData?.setDragImage
         // await evt.clipboardData?.setData('text/plain', 'Hello, world!');
-        evt.stopPropagation();
-        evt.preventDefault();
-        let newLine = clipboardText;
-        const text = editor.getValue();
-        const oldLine = editor.getLine(editor.getCursor().line);
-        if (oldLine.trimStart().startsWith('- [ ]') || newLine.trimStart().startsWith('- [ ]')) {
-            const reg = /(\s*- \[ \]\s?)+/;
-            newLine = newLine.replace(reg, '');
-        }
-        const start = text.indexOf(clipboardText);
-        if (start < 0) {
-            Logger.log(`Unable to find text "${clipboardText}" in current editor`);
-        } else {
-            const end = start + clipboardText.length;
-            const startPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, start);
-            const endPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, end);
-            editor.replaceRange(newLine, startPos, endPos);
-            return;
-        }
+        // evt.stopPropagation();
+        // evt.preventDefault();
+
+        // let newLine = clipboardText;
+        // const text = editor.getValue();
+        // const oldLine = editor.getLine(editor.getCursor().line);
+        // if (oldLine.trimStart().startsWith('- [ ]') || newLine.trimStart().startsWith('- [ ]')) {
+        //     const reg = /(\s*- \[ \]\s?)+/;
+        //     newLine = newLine.replace(reg, '');
+        // }
+        // const start = text.indexOf(clipboardText);
+        // if (start < 0) {
+        //     Logger.log(`Unable to find text "${clipboardText}" in current editor`);
+        // } else {
+        //     const end = start + clipboardText.length;
+        //     const startPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, start);
+        //     const endPos = ObsidianManagerPlugin.getEditorPositionFromIndex(text, end);
+        //     editor.replaceRange(newLine, startPos, endPos);
+        //     return;
+        // }
     }
 
     async customizeFileMenu(menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf): Promise<void> {
@@ -788,7 +793,67 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.style.detach();
     }
 
+    async setRandomBanner(path?: string): Promise<void> {
+        const allFilePaths = Object.keys(this.app.metadataCache.fileCache);
+        const allMdFilePaths = allFilePaths.filter(
+            key => this.app.metadataCache.fileCache[key]['hash'] && ['Notes'].contains(key.split('/')[0]),
+        );
+        const allMdFilePathsWithBanner = allMdFilePaths.filter(file => {
+            const banner =
+                this.app.metadataCache.metadataCache[this.app.metadataCache.fileCache[file].hash].frontmatter?.banner;
+            if (banner && (banner.startsWith('https://dummyimage') || banner.startsWith('https://images.unsplash'))) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+        let time = 0;
+        console.log(allMdFilePathsWithBanner);
+        allMdFilePathsWithBanner.forEach(async filePath => {
+            time++;
+            (function (t, file) {
+                setTimeout(async function () {
+                    const hash = this.app.metadataCache.fileCache[file].hash;
+                    const frontmatter = this.app.metadataCache.metadataCache[hash].frontmatter;
+                    const banner = frontmatter?.banner;
+                    const title = frontmatter?.title;
+                    console.info(title + '进行中' + t);
+                    try {
+                        const newBanner = await searchPicture('pexels', title);
+                        if (newBanner) {
+                            const result = await setBanner(file, banner, newBanner);
+                            if (result) {
+                                console.info(title + '成功');
+                            } else {
+                                console.info(title + '失败');
+                            }
+                        }
+                    } catch (error) {
+                        console.error(title + '错误');
+                    }
+                }, 2 * t);
+            })(time, filePath);
+        });
+        console.warn('All File Done!!!!\n\n\n\n\n');
+    }
+
     private setupCommands() {
+        // this.addCommand({
+        //     id: 'set-random-banner-for-current-file',
+        //     name: 'Set Random Banner For Current File',
+        //     callback: async () => {
+        //         this.setRandomBanner('this file');
+        //     },
+        // });
+
+        // this.addCommand({
+        //     id: 'set-random-banner-for-all-files',
+        //     name: 'Set Random Banner For All Files',
+        //     callback: async () => {
+        //         this.setRandomBanner();
+        //     },
+        // });
+
         this.addCommand({
             id: 'switch-text-direction',
             name: 'Switch Text Direction (LTR<>RTL)',

@@ -1,6 +1,40 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { Notice } from 'obsidian';
 import Logger from './logger';
+
+export const createAxiosByinterceptors = (config?: AxiosRequestConfig): AxiosInstance => {
+    const instance = axios.create({
+        timeout: 5000,
+        // withCredentials: true,
+        ...config,
+    });
+
+    instance.interceptors.request.use(
+        function (config: any) {
+            // config.headers.Authorization = vm.$Cookies.get("access_token");
+            return config;
+        },
+        function (error) {
+            return Promise.reject(error);
+        },
+    );
+
+    // 添加响应拦截器
+    instance.interceptors.response.use(
+        function (response) {
+            return response;
+        },
+        function (error) {
+            console.error(error);
+            console.error(error?.response?.data?.message || '服务端异常');
+            return Promise.reject(error);
+        },
+    );
+
+    return instance;
+};
+
+export const request = createAxiosByinterceptors();
 
 export function notify(msg: any, config: any) {
     Logger.error(msg);

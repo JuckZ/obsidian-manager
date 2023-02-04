@@ -115,6 +115,7 @@
     "jsonfile": "^6.1.0",
     "obsidian-daily-notes-interface": "^0.9.4",
     "party-js": "^2.2.0",
+    "pexels": "^1.4.0",
     "rrule": "^2.7.1",
     "sql.js": "^1.8.0",
     "svelte": "^3.53.1",

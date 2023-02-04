@@ -1,4 +1,4 @@
-import { App, TFolder } from 'obsidian';
+import { App, TFile, TFolder } from 'obsidian';
 import * as obsidian from 'obsidian';
 
 export async function getNotePath(directory, filename) {
@@ -49,3 +49,16 @@ export const getFolderFromPath = (app: App, path: string): TFolder | null => {
 };
 
 export const getFolderPathFromString = (file: string) => getFolderFromPath(app, file)?.path;
+
+export async function getAllFiles(folders, images): Promise<TFile[]> {
+    const children = await app.fileManager.vault.fileMap[folders].children;
+    for (let index = 0; index < children.length; index++) {
+        const element = children[index];
+        if (element.children && element.children.length != 0) {
+            await getAllFiles(element.path, images);
+        } else {
+            images.push(element);
+        }
+    }
+    return images;
+}

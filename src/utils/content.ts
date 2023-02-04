@@ -111,3 +111,11 @@ export async function insertTextAfterPositionInBody(
         // return `${pre}${text}\n${post}`;
     }
 }
+
+export async function setBanner(filepath, oldBanner, newBanner) {
+    const fileContents = await app.vault.adapter.read(filepath);
+    const originalLine = `banner: '${oldBanner}'`;
+    const newContent = fileContents.replace(originalLine, `banner: '${newBanner}'`);
+    await app.vault.adapter.write(filepath, newContent);
+    return true;
+}
