@@ -41,7 +41,7 @@ import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
 import { Example1Modal, Example2Modal, InsertLinkModal } from 'ui/modal/insert-link-modal';
 import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/PomodoroHistoryView';
 import { codeEmoji } from 'render/Emoji';
-import { disableCursorEffect, effects, enableCursorEffect } from 'render/CursorEffects';
+import { toggleCursorEffects } from 'render/CursorEffects';
 import { buildTagRules } from 'render/Tag';
 import { ReminderModal } from 'ui/reminder';
 import Logger, { toggleDebugEnable } from 'utils/logger';
@@ -53,6 +53,7 @@ import { searchPicture } from 'utils/genBanner';
 import { loadSQL } from 'utils/db/sqljs';
 import { initiateDB } from 'utils/promotodo';
 import type { Database } from 'sql.js';
+import { MAX_TIME_SINCE_CREATION, checkInDefaultPath, checkInList } from 'utils/constants';
 import {
     Decoration,
     DecorationSet,
@@ -67,70 +68,7 @@ import {
 import { imgpath } from 'utils/genBanner';
 import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
-import { destroyBlast, initBlast, onCodeMirrorChange } from './render/Blast';
-
-const MAX_TIME_SINCE_CREATION = 5000; // 5 seconds
-const checkInDefaultPath = 'Journal/Habit';
-const checkInList = [
-    {
-        filename: 'Get up',
-        content: '[[Get up]] and sit in [[meditation]]',
-        time: '07:00',
-    },
-    {
-        filename: '日记',
-        content: '[[日记|Journal]]',
-        time: '07:30',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'Review',
-        content: '[[Review]]',
-        time: '07:30',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'Breakfast',
-        content: '[[Breakfast]]',
-        time: '08:00',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'leave for work',
-        content: '[[leave for work]]',
-        time: '09:00',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'Launch',
-        content: '[[Launch]] and take a break',
-        time: '12:30',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'Dinner',
-        content: '[[Dinner]] ',
-        time: '18:00',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'Go through today',
-        content: '[[Go through today]]',
-        time: '22:30',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'Plan for tomorrow',
-        content: '[[Plan for tomorrow]]',
-        time: '22:30',
-    },
-    {
-        path: checkInDefaultPath,
-        filename: 'End the day',
-        content: '[[End the day]]',
-        time: '23:00',
-    },
-];
+import { onCodeMirrorChange, toggleBlast } from './render/Blast';
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
@@ -622,6 +560,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onload(): Promise<void> {
+        await this.pluginDataIO.load();
         this.setupUI();
         this.setupCommands();
         this.registerMarkdownPostProcessor(codeEmoji);
@@ -637,7 +576,6 @@ export default class ObsidianManagerPlugin extends Plugin {
             initiateDB(this.spaceDBInstance());
         }
         this.app.workspace.onLayoutReady(async () => {
-            await this.pluginDataIO.load();
             if (this.pluginDataIO.debug.value) {
                 monkeyPatchConsole(this);
             }
@@ -788,7 +726,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onunload(): Promise<void> {
-        destroyBlast();
+        toggleBlast(0);
         this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
         this.style.detach();
     }
@@ -809,8 +747,8 @@ export default class ObsidianManagerPlugin extends Plugin {
                 banner &&
                 typeof banner == 'string' &&
                 (banner.startsWith('https://dummyimage') ||
-                    banner.startsWith('https://images.unsplash') ||
-                    // banner.startsWith('https://images.pexels') ||
+                    // banner.startsWith('https://images.unsplash') ||
+                    banner.startsWith('https://pixabay.com') ||
                     banner.startsWith('/'))
             ) {
                 return true;
@@ -897,24 +835,6 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Toggle debug',
             callback: () => {
                 toggleDebugEnable();
-            },
-        });
-
-        this.addCommand({
-            id: 'enable-cursor-effect',
-            name: 'Enable CursorEffect',
-            callback: () => {
-                const len = effects.length;
-                const idx = Math.floor(Math.random() * len);
-                enableCursorEffect(effects[idx]);
-            },
-        });
-
-        this.addCommand({
-            id: 'disable-cursor-effect',
-            name: 'Disable CursorEffect',
-            callback: () => {
-                disableCursorEffect();
             },
         });
 
@@ -1124,8 +1044,8 @@ export default class ObsidianManagerPlugin extends Plugin {
     private setupUI() {
         // this.registerEditorExtension(lineNumbers());
         // this.registerEditorExtension(emojiListPlugin);
-        // input power mode
-        initBlast();
+        toggleBlast(SETTINGS.powerMode.value);
+        toggleCursorEffects(SETTINGS.cursorEffect.value);
         // 状态栏图标
         const obsidianManagerStatusBar = this.addStatusBarItem();
         // obsidianManagerStatusBar.createEl('span', { text: '🍎' });

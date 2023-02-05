@@ -40,7 +40,7 @@ export const effects = [
 
 const cursorEffects: any[] = [];
 
-export function enableCursorEffect(effectName) {
+function enableCursorEffect(effectName) {
     let emo;
     switch (effectName) {
         case 'bubbleCursor':
@@ -82,7 +82,16 @@ export function enableCursorEffect(effectName) {
     cursorEffects.push(emo);
 }
 
-export function disableCursorEffect() {
+export function toggleCursorEffects(target: string) {
+    if (target != 'none') {
+        disableCursorEffect();
+        enableCursorEffect(target);
+    } else {
+        disableCursorEffect();
+    }
+}
+
+function disableCursorEffect() {
     cursorEffects.forEach(emo => emo.destroy());
 }
 

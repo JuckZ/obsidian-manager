@@ -5,7 +5,7 @@ let shakeTime = 0,
     shakeTimeMax = 0,
     lastTime = 0,
     particlePointer = 0,
-    effect,
+    effect: string,
     isActive = false,
     cmNode,
     canvas,
@@ -75,7 +75,7 @@ function createParticle(x, y, color) {
         wander: 0,
         theta: 0,
     };
-    if (effect === 1) {
+    if (effect === '1') {
         p.size = random(2, 4);
         p.vx =
             PARTICLE_VELOCITY_RANGE.x[0] +
@@ -83,7 +83,7 @@ function createParticle(x, y, color) {
         p.vy =
             PARTICLE_VELOCITY_RANGE.y[0] +
             Math.random() * (PARTICLE_VELOCITY_RANGE.y[1] - PARTICLE_VELOCITY_RANGE.y[0]);
-    } else if (effect === 2) {
+    } else if (effect === '2') {
         p.size = random(2, 8);
         p.drag = 0.92;
         p.vx = random(-3, 3);
@@ -132,9 +132,9 @@ function drawParticles() {
             continue;
         }
 
-        if (effect === 1) {
+        if (effect === '1') {
             effect1(particle);
-        } else if (effect === 2) {
+        } else if (effect === '2') {
             effect2(particle);
         }
     }
@@ -201,30 +201,32 @@ export function onCodeMirrorChange(editor) {
     throttledSpawnParticles(editor);
 }
 
-export function initBlast() {
-    effect = 2;
-    isActive = true;
+export function toggleBlast(targetEffect: string) {
+    if (powerMode.contains(targetEffect)) {
+        effect = targetEffect;
+        isActive = true;
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            (ctx = canvas.getContext('2d')), (canvas.id = 'code-blast-canvas');
+            canvas.style.position = 'absolute';
+            canvas.style.top = `${titleBarHeight}px`;
+            canvas.style.left = 0;
+            canvas.style.zIndex = 1;
+            canvas.style.pointerEvents = 'none';
+            canvas.width = w;
+            canvas.height = h;
 
-    if (!canvas) {
-        canvas = document.createElement('canvas');
-        (ctx = canvas.getContext('2d')), (canvas.id = 'code-blast-canvas');
-        canvas.style.position = 'absolute';
-        canvas.style.top = `${titleBarHeight}px`;
-        canvas.style.left = 0;
-        canvas.style.zIndex = 1;
-        canvas.style.pointerEvents = 'none';
-        canvas.width = w;
-        canvas.height = h;
-
-        document.body.appendChild(canvas);
-        loop();
+            document.body.appendChild(canvas);
+            loop();
+        }
+    } else {
+        isActive = false;
+        if (canvas) {
+            canvas.remove();
+            canvas = null;
+        }
+        return;
     }
 }
 
-export function destroyBlast() {
-    isActive = false;
-    if (canvas) {
-        canvas.remove();
-        canvas = null;
-    }
-}
+export const powerMode = ['1', '2'];

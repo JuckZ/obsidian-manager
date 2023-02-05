@@ -14,15 +14,20 @@ import { DateTime, Later, Time } from 'model/time';
 import { App, PluginSettingTab, Plugin_2, TAbstractFile, TFile } from 'obsidian';
 import { getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import type { PluginDataIO } from 'data';
-
+import { effects, toggleCursorEffects } from 'render/CursorEffects';
+import { powerMode, toggleBlast } from 'render/Blast';
 export const TAG_RESCAN = 're-scan';
 
 class Settings {
     settings: SettingTabModel = new SettingTabModel();
 
     setRolloverTemplateHeadingOptionsHasBeenSet!: boolean;
+    cursorEffectBuilder: any;
+    powerModeBuilder: any;
     rolloverTemplateHeadingBuilder: any;
 
+    cursorEffect: SettingModel<string, string>;
+    powerMode: SettingModel<string, number>;
     reminderTime: SettingModel<string, Time>;
     useSystemNotification: SettingModel<boolean, boolean>;
     laters: SettingModel<string, Array<Later>>;
@@ -43,6 +48,36 @@ class Settings {
 
     constructor() {
         const reminderFormatSettings = new ReminderFormatSettings(this.settings);
+
+        this.cursorEffectBuilder = this.settings
+            .newSettingBuilder()
+            .key('cursorEffect')
+            .name('Cursor Effect')
+            .desc('Select a mouse effect')
+            .dropdown('none');
+
+        this.cursorEffectBuilder.addOption('none', 'none');
+        effects.forEach(f => this.cursorEffectBuilder.addOption(`${f}`, f));
+
+        this.cursorEffect = this.cursorEffectBuilder
+            .onAnyValueChanged(context => {
+                toggleCursorEffects(SETTINGS.cursorEffect.value);
+            })
+            .build(new RawSerde());
+
+        this.powerModeBuilder = this.settings
+            .newSettingBuilder()
+            .key('powerMode')
+            .name('Enable editor power mode')
+            .desc('Enable power mode effects?')
+            .dropdown('0');
+        this.powerModeBuilder.addOption('No effect', 0);
+        powerMode.forEach(f => this.powerModeBuilder.addOption(`Effect ${f}`, f));
+        this.powerMode = this.powerModeBuilder
+            .onAnyValueChanged(context => {
+                toggleBlast(SETTINGS.powerMode.value);
+            })
+            .build(new RawSerde());
 
         this.reminderTime = this.settings
             .newSettingBuilder()
@@ -218,6 +253,8 @@ class Settings {
             .desc('If you set this value as true, your will see debug info in console.')
             .toggle(true)
             .build(new RawSerde());
+
+        this.settings.newGroup('Beautiful Effects').addSettings(this.cursorEffect, this.powerMode);
 
         this.settings
             .newGroup('Rollover TODOs')
