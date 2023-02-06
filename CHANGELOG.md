@@ -1,3 +1,22 @@
+# [1.7.0](https://github.com/JuckZ/obsidian-manager/compare/v1.6.0...v1.7.0) (2023-02-06)
+
+
+### Features
+
+* 1. new feature: power mode ([3778b82](https://github.com/JuckZ/obsidian-manager/commit/3778b82e74a398b1a852d17423fa96a1b41a5ef2))
+* 1.add command for cursor effect 2. enable party-js ([393c0d7](https://github.com/JuckZ/obsidian-manager/commit/393c0d791478e3fde855f8a4b48b976c8bd87ec4))
+* 1.add customize tag 2.ntfy config reader ([65ca17c](https://github.com/JuckZ/obsidian-manager/commit/65ca17c3b470972d2da85a9acf2f708d8c547ad4))
+* 1.add effect selector 2. add image origin select modal 3. others ([fccf60f](https://github.com/JuckZ/obsidian-manager/commit/fccf60f5e97906b82b0ef80a91d6592675ef2741))
+* 1.cursor effect 2. power mode 3. set banner ([0666934](https://github.com/JuckZ/obsidian-manager/commit/0666934cf6d97b5be63d1907c033259925dba932))
+* 1.habit check in 2.remove habit check in 3.dispatchDatabaseFileChanged ([2f05ace](https://github.com/JuckZ/obsidian-manager/commit/2f05ace280a142d1057dc280017651fa0b145d09))
+* 1.npm config 2.esbuild plugin 3.sql.js ([729f77f](https://github.com/JuckZ/obsidian-manager/commit/729f77f6341fc2287232a076425e381f3cb25639))
+* 1.random banner support ([f065b75](https://github.com/JuckZ/obsidian-manager/commit/f065b75ea479eacb0b340fcbf655508643f60c28))
+* 1.settings for power mode and cursor effects ([1c0d9dc](https://github.com/JuckZ/obsidian-manager/commit/1c0d9dcf389e74150f23b4e465f482ed2a73dcea))
+* 1.右键TODO可以对任务开启番茄钟 ([9e68152](https://github.com/JuckZ/obsidian-manager/commit/9e68152e367eb17fac4bc80b856e62905e45ad60))
+* 1.日志开关功能（待完善） ([f3d1e83](https://github.com/JuckZ/obsidian-manager/commit/f3d1e839c3bd764c782d0c669a5870a70504989a))
+* 1.番茄钟历史记录视图 ([495c0ab](https://github.com/JuckZ/obsidian-manager/commit/495c0abe0ef5b54179dc135581787bcc388660cf))
+* 1.粘贴监听，如果以 `- [ ]`开头，则消除重复的`- [ ]` 2. vue support ([0b294b9](https://github.com/JuckZ/obsidian-manager/commit/0b294b9ff5f5c4e6eff8213d1a94f5cdae74d7a8))
+
 # [1.6.0](https://github.com/JuckZ/obsidian-manager/compare/v1.5.0...v1.6.0) (2022-11-16)
 
 
