@@ -5,7 +5,7 @@ export const searchPicture = async (source: string, keyword: string): Promise<st
     const res: AxiosResponse = await new Promise((resolve, reject) => {
         request
             // .get(`https://api.ihave.cool/gen_image/from_keyword?origin=${source}&keyword=${keyword}`)
-            .get(`http://localhost:8080/gen_image/from_keyword?origin=${source}&keyword=${keyword}`)
+            .get(`https://api.ihave.cool/gen_image/from_keyword?origin=${source}&keyword=${keyword}`)
             .then(res => {
                 console.log(res);
                 resolve(res);

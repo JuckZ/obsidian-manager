@@ -15,11 +15,11 @@ const ALL_IMAGE_ORIGIN = [
     { title: 'pixabay', origin: 'pixabay' },
     { title: 'pexels', origin: 'pexels' },
     { title: 'dummyimage', origin: 'dummyimage' },
-    { title: 'deepai', origin: 'deepai' },
-    { title: 'random', origin: 'random' },
-    { title: 'localmatch', origin: 'localmatch' },
-    { title: 'templater', origin: 'templater' },
-    { title: 'input', origin: 'input' },
+    // { title: 'deepai', origin: 'deepai' },
+    // { title: 'random', origin: 'random' },
+    // { title: 'localmatch', origin: 'localmatch' },
+    // { title: 'templater', origin: 'templater' },
+    // { title: 'input', origin: 'input' },
 ];
 
 const ALL_BOOKS = [

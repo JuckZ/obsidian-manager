@@ -26,7 +26,7 @@ export async function insertAfterHandler(targetString: string, formatted: string
     const foundNextHeader = nextHeaderPositionAfterTargetPosition !== -1;
 
     if (foundNextHeader) {
-        let endOfSectionIndex: number;
+        let endOfSectionIndex = -1;
 
         for (let i = nextHeaderPositionAfterTargetPosition + targetPosition; i > targetPosition; i--) {
             const lineIsNewline: boolean = /^[\s\n ]*$/.test(fileContentLines[i]);
@@ -36,7 +36,7 @@ export async function insertAfterHandler(targetString: string, formatted: string
             }
         }
 
-        if (!endOfSectionIndex) endOfSectionIndex = targetPosition;
+        if (endOfSectionIndex == -1) endOfSectionIndex = targetPosition;
 
         return await insertTextAfterPositionInBody(formatted, fileContent, endOfSectionIndex, foundNextHeader);
     } else {

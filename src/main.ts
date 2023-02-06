@@ -738,7 +738,8 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async setRandomBanner(path: TAbstractFile | null, origin: string): Promise<void> {
-        const ignorePath = ['Journal', 'Inbox/Other', 'Reading', 'MyObsidian', 'Archive'];
+        // const ignorePath = ['Journal', 'Reading', 'MyObsidian', 'Archive'];
+        const ignorePath = [];
         const allFilePathNeededHandle: TFile[] = await getAllFiles(path, ignorePath, 'md', []);
         // allFilePathNeededHandle = allFilePathNeededHandle.filter(file => {
         //     const banner =
@@ -753,20 +754,18 @@ export default class ObsidianManagerPlugin extends Plugin {
         //             banner.startsWith('/'))
         //     );
         // });
-        console.log(222, allFilePathNeededHandle);
-        console.log('123123');
         allFilePathNeededHandle.forEach(async file => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             const hash = this.app.metadataCache.fileCache[file.path].hash;
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             const frontmatter = this.app.metadataCache.metadataCache[hash].frontmatter;
             const banner = frontmatter?.banner;
             const title = frontmatter?.title;
-            try {
-                const newBanner = await searchPicture(origin, title);
-                if (newBanner) {
-                    await setBanner(file, banner, newBanner);
-                }
-            } catch (error) {
-                console.error(title + '错误');
+            const newBanner = await searchPicture(origin, title);
+            if (newBanner) {
+                await setBanner(file.path, banner, newBanner);
             }
         });
     }

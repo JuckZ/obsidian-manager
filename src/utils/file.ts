@@ -53,6 +53,8 @@ export const getFolderPathFromString = (file: string) => getFolderFromPath(app, 
 export async function getAllFiles(folders, ignorePath: string[], ext, files): Promise<TFile[]> {
     const ignoreMatch = ignorePath.find(item => folders.path.startsWith(item));
     if (!ignoreMatch) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         const children = await app.fileManager.vault.fileMap[folders.path].children;
         if (!children) {
             files.push(folders);
