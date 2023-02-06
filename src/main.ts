@@ -38,7 +38,7 @@ import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { Example1Modal, Example2Modal, InsertLinkModal } from 'ui/modal/insert-link-modal';
+import { Example2Modal, ImageOriginModal, InsertLinkModal } from 'ui/modal/insert-link-modal';
 import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/PomodoroHistoryView';
 import { codeEmoji } from 'render/Emoji';
 import { toggleCursorEffects } from 'render/CursorEffects';
@@ -46,7 +46,7 @@ import { buildTagRules } from 'render/Tag';
 import { ReminderModal } from 'ui/reminder';
 import Logger, { toggleDebugEnable } from 'utils/logger';
 import { notify } from 'utils/request';
-import { getNotePath } from 'utils/file';
+import { getAllFiles, getNotePath } from 'utils/file';
 import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, saveDBToPath, selectDB } from 'utils/db/db';
 import { insertAfterHandler, setBanner } from 'utils/content';
 import { searchPicture } from 'utils/genBanner';
@@ -65,10 +65,9 @@ import {
     WidgetType,
     lineNumbers,
 } from '@codemirror/view';
-import { imgpath } from 'utils/genBanner';
 import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
-import { onCodeMirrorChange, toggleBlast } from './render/Blast';
+import { onCodeMirrorChange, toggleBlast, toggleShake } from './render/Blast';
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
@@ -466,6 +465,13 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     async customizeEditorMenu(menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
         menu.addItem(item => {
+            item.setTitle('Set Random Banner For Current File')
+                .setIcon('swords')
+                .onClick(async => {
+                    new ImageOriginModal(this.app, this, this.app.workspace.getActiveFile()).open();
+                });
+        });
+        menu.addItem(item => {
             item.setTitle('Start a pomodoro')
                 .setIcon('clock')
                 .onClick(async () => {
@@ -520,10 +526,10 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     async customizeFileMenu(menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf): Promise<void> {
         menu.addItem(item => {
-            item.setTitle('Print file path 👈')
-                .setIcon('document')
+            item.setTitle('Set random banner for this path')
+                .setIcon('swords')
                 .onClick(async () => {
-                    new Notice(file.path);
+                    new ImageOriginModal(this.app, this, file).open();
                 });
         });
     }
@@ -726,82 +732,46 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     override async onunload(): Promise<void> {
-        toggleBlast(0);
+        toggleBlast('0');
         this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
         this.style.detach();
     }
 
-    async setRandomBanner(path?: string): Promise<void> {
-        const allFilePaths = Object.keys(this.app.metadataCache.fileCache);
-        const allMdFilePaths = allFilePaths.filter(
-            key =>
-                this.app.metadataCache.fileCache[key]['hash'] &&
-                ['Notes', 'Journal', 'Inbox', 'Reading', 'MyObsidian', 'Archive'].contains(key.split('/')[0]),
-        );
-        const allMdFilePathsWithBanner = allMdFilePaths.filter(file => {
-            const banner =
-                this.app.metadataCache.metadataCache[this.app.metadataCache.fileCache[file].hash].frontmatter?.banner;
-            // https://images.pexels
-            //
-            if (
-                banner &&
-                typeof banner == 'string' &&
-                (banner.startsWith('https://dummyimage') ||
-                    // banner.startsWith('https://images.unsplash') ||
-                    banner.startsWith('https://pixabay.com') ||
-                    banner.startsWith('/'))
-            ) {
-                return true;
-            } else {
-                return false;
-            }
-        });
-        console.log(allMdFilePathsWithBanner);
-        let t = 0;
-        allMdFilePathsWithBanner.forEach(async file => {
-            const hash = this.app.metadataCache.fileCache[file].hash;
+    async setRandomBanner(path: TAbstractFile | null, origin: string): Promise<void> {
+        const ignorePath = ['Journal', 'Inbox/Other', 'Reading', 'MyObsidian', 'Archive'];
+        const allFilePathNeededHandle: TFile[] = await getAllFiles(path, ignorePath, 'md', []);
+        // allFilePathNeededHandle = allFilePathNeededHandle.filter(file => {
+        //     const banner =
+        //         this.app.metadataCache.metadataCache[this.app.metadataCache.fileCache[file.path].hash].frontmatter
+        //             ?.banner;
+        //     return (
+        //         banner &&
+        //         typeof banner == 'string' &&
+        //         (banner.startsWith('https://dummyimage') ||
+        //             banner.startsWith('https://images.unsplash') ||
+        //             banner.startsWith('https://pixabay.com') ||
+        //             banner.startsWith('/'))
+        //     );
+        // });
+        console.log(222, allFilePathNeededHandle);
+        console.log('123123');
+        allFilePathNeededHandle.forEach(async file => {
+            const hash = this.app.metadataCache.fileCache[file.path].hash;
             const frontmatter = this.app.metadataCache.metadataCache[hash].frontmatter;
             const banner = frontmatter?.banner;
             const title = frontmatter?.title;
-            (function (t, data) {
-                setTimeout(async function () {
-                    try {
-                        // pixabay pexels
-                        const newBanner = await searchPicture('pexels', title);
-                        if (newBanner) {
-                            const result = await setBanner(file, banner, newBanner);
-                            if (result) {
-                                console.info(title + '成功' + newBanner);
-                            } else {
-                                console.info(title + '失败' + result);
-                            }
-                        }
-                    } catch (error) {
-                        console.error(title + '错误');
-                    }
-                    console.log(`这是第 ${t} 次，这是其他参数：${data}`);
-                }, 200 * t);
-            })(t++, '其他参数');
+            try {
+                const newBanner = await searchPicture(origin, title);
+                if (newBanner) {
+                    await setBanner(file, banner, newBanner);
+                }
+            } catch (error) {
+                console.error(title + '错误');
+            }
         });
     }
 
     private setupCommands() {
-        // this.addCommand({
-        //     id: 'set-random-banner-for-current-file',
-        //     name: 'Set Random Banner For Current File',
-        //     callback: async () => {
-        //         this.setRandomBanner('this file');
-        //     },
-        // });
-
-        this.addCommand({
-            id: 'set-random-banner-for-all-files',
-            name: 'Danger Method!!! Set Random Banner For All Files',
-            callback: async () => {
-                this.setRandomBanner();
-            },
-        });
-
         this.addCommand({
             id: 'switch-text-direction',
             name: 'Switch Text Direction (LTR<>RTL)',
@@ -1045,6 +1015,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         // this.registerEditorExtension(lineNumbers());
         // this.registerEditorExtension(emojiListPlugin);
         toggleBlast(SETTINGS.powerMode.value);
+        toggleShake(SETTINGS.shakeMode);
         toggleCursorEffects(SETTINGS.cursorEffect.value);
         // 状态栏图标
         const obsidianManagerStatusBar = this.addStatusBarItem();

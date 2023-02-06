@@ -1,4 +1,5 @@
 import process from 'process';
+import fs from 'node:fs';
 import esbuild from 'esbuild';
 import builtins from 'builtin-modules';
 import esbuildSvelte from 'esbuild-svelte';
@@ -19,7 +20,14 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === 'production';
 const dir = process.env.OUTDIR ? process.env.OUTDIR : 'dest';
+const copyFiles = ['.hotreload', 'manifest.json', 'versions.json'];
 
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+}
+copyFiles.forEach(file => {
+    fs.copyFileSync(file, dir + '/' + file);
+});
 esbuild
     .build({
         banner: {

@@ -27,7 +27,8 @@ class Settings {
     rolloverTemplateHeadingBuilder: any;
 
     cursorEffect: SettingModel<string, string>;
-    powerMode: SettingModel<string, number>;
+    powerMode: SettingModel<string, string>;
+    shakeMode: SettingModel<boolean, boolean>;
     reminderTime: SettingModel<string, Time>;
     useSystemNotification: SettingModel<boolean, boolean>;
     laters: SettingModel<string, Array<Later>>;
@@ -71,12 +72,20 @@ class Settings {
             .name('Enable editor power mode')
             .desc('Enable power mode effects?')
             .dropdown('0');
-        this.powerModeBuilder.addOption('No effect', 0);
+        this.powerModeBuilder.addOption('No effect', '0');
         powerMode.forEach(f => this.powerModeBuilder.addOption(`Effect ${f}`, f));
         this.powerMode = this.powerModeBuilder
             .onAnyValueChanged(context => {
                 toggleBlast(SETTINGS.powerMode.value);
             })
+            .build(new RawSerde());
+
+        this.shakeMode = this.settings
+            .newSettingBuilder()
+            .key('shakeMode')
+            .name('Shake Mode')
+            .desc('Enable editor shake mode?')
+            .toggle(false)
             .build(new RawSerde());
 
         this.reminderTime = this.settings
@@ -254,7 +263,7 @@ class Settings {
             .toggle(true)
             .build(new RawSerde());
 
-        this.settings.newGroup('Beautiful Effects').addSettings(this.cursorEffect, this.powerMode);
+        this.settings.newGroup('Beautiful Effects').addSettings(this.cursorEffect, this.powerMode, this.shakeMode);
 
         this.settings
             .newGroup('Rollover TODOs')

@@ -50,15 +50,22 @@ export const getFolderFromPath = (app: App, path: string): TFolder | null => {
 
 export const getFolderPathFromString = (file: string) => getFolderFromPath(app, file)?.path;
 
-export async function getAllFiles(folders, images): Promise<TFile[]> {
-    const children = await app.fileManager.vault.fileMap[folders].children;
-    for (let index = 0; index < children.length; index++) {
-        const element = children[index];
-        if (element.children && element.children.length != 0) {
-            await getAllFiles(element.path, images);
+export async function getAllFiles(folders, ignorePath: string[], ext, files): Promise<TFile[]> {
+    const ignoreMatch = ignorePath.find(item => folders.path.startsWith(item));
+    if (!ignoreMatch) {
+        const children = await app.fileManager.vault.fileMap[folders.path].children;
+        if (!children) {
+            files.push(folders);
         } else {
-            images.push(element);
+            for (let index = 0; index < children.length; index++) {
+                const element = children[index];
+                if (element.children && element.children.length != 0) {
+                    await getAllFiles(element, ignorePath, ext, files);
+                } else if (element.extension && element.extension === ext) {
+                    files.push(element);
+                }
+            }
         }
     }
-    return images;
+    return files;
 }

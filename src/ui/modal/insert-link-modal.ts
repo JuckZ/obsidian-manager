@@ -1,9 +1,26 @@
-import { App, FuzzySuggestModal, Modal, Notice, Setting, SuggestModal } from 'obsidian';
+import type ObsidianManagerPlugin from 'main';
+import { App, FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TAbstractFile } from 'obsidian';
 
 interface Book {
     title: string;
     author: string;
 }
+
+interface ImageOrigin {
+    title: string;
+    origin: string;
+}
+
+const ALL_IMAGE_ORIGIN = [
+    { title: 'pixabay', origin: 'pixabay' },
+    { title: 'pexels', origin: 'pexels' },
+    { title: 'dummyimage', origin: 'dummyimage' },
+    { title: 'deepai', origin: 'deepai' },
+    { title: 'random', origin: 'random' },
+    { title: 'localmatch', origin: 'localmatch' },
+    { title: 'templater', origin: 'templater' },
+    { title: 'input', origin: 'input' },
+];
 
 const ALL_BOOKS = [
     {
@@ -20,17 +37,27 @@ const ALL_BOOKS = [
     },
 ];
 
-export class Example1Modal extends FuzzySuggestModal<Book> {
-    getItems(): Book[] {
-        return ALL_BOOKS;
+export class ImageOriginModal extends FuzzySuggestModal<ImageOrigin> {
+    selectedPath: TAbstractFile | null;
+    plugin: ObsidianManagerPlugin;
+
+    constructor(app: App, plugin: ObsidianManagerPlugin, path: TAbstractFile | null) {
+        super(app);
+        this.plugin = plugin;
+        this.selectedPath = path;
     }
 
-    getItemText(book: Book): string {
-        return book.title;
+    getItems(): ImageOrigin[] {
+        return ALL_IMAGE_ORIGIN;
     }
 
-    onChooseItem(book: Book, evt: MouseEvent | KeyboardEvent) {
-        new Notice(`Selected ${book.title}`);
+    getItemText(imageOrigin: ImageOrigin): string {
+        return imageOrigin.title;
+    }
+
+    onChooseItem(imageOrigin: ImageOrigin, evt: MouseEvent | KeyboardEvent) {
+        new Notice(`Selected ${imageOrigin.origin}`);
+        this.plugin.setRandomBanner(this.selectedPath, imageOrigin.origin);
     }
 }
 

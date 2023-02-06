@@ -1,5 +1,7 @@
+import type { SettingModel } from 'model/settings';
 import type { Editor } from 'obsidian';
-import { heartBeat } from './CursorEffects';
+import party from 'party-js';
+import type { DynamicSourceType } from 'party-js/lib/systems/sources';
 
 let shakeTime = 0,
     shakeTimeMax = 0,
@@ -7,6 +9,7 @@ let shakeTime = 0,
     particlePointer = 0,
     effect: string,
     isActive = false,
+    enableShake: SettingModel<boolean, boolean>,
     cmNode,
     canvas,
     ctx;
@@ -30,6 +33,67 @@ const shakeIntensity = 5,
 
 const throttledShake = throttle(shake, 100);
 const throttledSpawnParticles = throttle(spawnParticles, 100);
+const throttledPartyMe = throttle(partyMe, 100);
+
+function heartBeat(node) {
+    const heartPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    heartPath.setAttribute(
+        'd',
+        'M316.722,29.761c66.852,0,121.053,54.202,121.053,121.041c0,110.478-218.893,257.212-218.893,257.212S0,266.569,0,150.801 C0,67.584,54.202,29.761,121.041,29.761c40.262,0,75.827,19.745,97.841,49.976C240.899,49.506,276.47,29.761,316.722,29.761z',
+    );
+
+    const heartShape = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as unknown as HTMLElement;
+    heartShape.setAttribute('viewBox', '0 0 512 512');
+    heartShape.setAttribute('height', '20');
+    heartShape.setAttribute('width', '20');
+    heartShape.appendChild(heartPath);
+
+    party.scene.current.createEmitter({
+        emitterOptions: {
+            loops: 1,
+            useGravity: false,
+            modules: [
+                new party.ModuleBuilder()
+                    .drive('size')
+                    .by(t => 0.5 + 0.3 * (Math.cos(t * 10) + 1))
+                    .build(),
+                new party.ModuleBuilder()
+                    .drive('rotation')
+                    .by(t => new party.Vector(0, 0, 100).scale(t))
+                    .relative()
+                    .build(),
+            ],
+        },
+        emissionOptions: {
+            rate: 0,
+            bursts: [{ time: 0, count: party.variation.skew(20, 10) }],
+            sourceSampler: party.sources.dynamicSource(node),
+            angle: party.variation.range(0, 360),
+            initialSpeed: 400,
+            initialColor: party.variation.gradientSample(
+                party.Gradient.simple(party.Color.fromHex('#ffa68d'), party.Color.fromHex('#fd3a84')),
+            ),
+        },
+        rendererOptions: {
+            shapeFactory: heartShape,
+            applyLighting: undefined,
+        },
+    });
+}
+
+function partyMe(cm, type) {
+    const cursorPos = cm.getCursor();
+    const pos = cm.coordsAtPos(cursorPos);
+    const node = document.elementFromPoint(pos.left - 5, pos.top + 5) as DynamicSourceType;
+    if (effect == '3') {
+        party.confetti(node, {
+            count: party.variation.range(20, 40),
+        });
+    }
+    if (effect == '4') {
+        heartBeat(node);
+    }
+}
 
 function getRGBComponents(node) {
     const color = getComputedStyle(node).color;
@@ -48,7 +112,6 @@ function spawnParticles(cm, type) {
     const cursorPos = cm.getCursor();
     const pos = cm.coordsAtPos(cursorPos);
     const node = document.elementFromPoint(pos.left - 5, pos.top + 5);
-    // heartBeat(node);
     type = cm.wordAt(cursorPos);
     if (type) {
         type = type.type;
@@ -181,7 +244,7 @@ function loop() {
     if (!lastTime) lastTime = current_time;
     const dt = (current_time - lastTime) / 1000;
     lastTime = current_time;
-    if (shakeTime > 0) {
+    if (enableShake.value && shakeTime > 0) {
         shakeTime -= dt;
         const magnitude = (shakeTime / shakeTimeMax) * shakeIntensity;
         const shakeX = random(-magnitude, magnitude);
@@ -199,6 +262,13 @@ export function onCodeMirrorChange(editor) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     throttledSpawnParticles(editor);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    throttledPartyMe(editor);
+}
+
+export function toggleShake(targetVal: SettingModel<boolean, boolean>) {
+    enableShake = targetVal;
 }
 
 export function toggleBlast(targetEffect: string) {
@@ -229,4 +299,4 @@ export function toggleBlast(targetEffect: string) {
     }
 }
 
-export const powerMode = ['1', '2'];
+export const powerMode = ['1', '2', '3', '4'];

@@ -374,7 +374,7 @@ class T {
     };
 
     constructor() {
-        this.lang = localStorage.getItem('language');
+        this.lang = localStorage.getItem('language') || 'en';
     }
 
     get texts(): typeof this.all.en {
