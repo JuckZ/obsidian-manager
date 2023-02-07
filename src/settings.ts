@@ -72,8 +72,9 @@ class Settings {
             .name('Enable editor power mode')
             .desc('Enable power mode effects?')
             .dropdown('0');
-        this.powerModeBuilder.addOption('No effect', '0');
-        powerMode.forEach(f => this.powerModeBuilder.addOption(`Effect ${f}`, f));
+        Object.keys(powerMode).forEach(f => {
+            this.powerModeBuilder.addOption(powerMode[f], f);
+        });
         this.powerMode = this.powerModeBuilder
             .onAnyValueChanged(context => {
                 toggleBlast(SETTINGS.powerMode.value);
@@ -390,15 +391,6 @@ export class ReminderSettingTab extends PluginSettingTab {
 
     async display(): Promise<void> {
         const { containerEl } = this;
-        // let ele1 = containerEl.createEl("h1", { text: "Heading 1" });
-        // let ele2 = containerEl.createEl("div", { cls: "book" });
-        // let ele3 = containerEl.createEl("div", { text: "How to Take Smart Notes", cls: "book__title" });
-        // let ele4 = containerEl.createEl("small", { text: "Sönke Ahrens", cls: "book__author" });
-        // containerEl = containerEl.appendChild(ele1)
-        // containerEl = containerEl.appendChild(ele2)
-        // containerEl = containerEl.appendChild(ele3)
-        // containerEl = containerEl.appendChild(ele4)
-        // containerEl.toggleClass("danger", status === "error");
         const templateHeadings: string[] = await this.getTemplateHeadings();
         SETTINGS.setRolloverTemplateHeadingOptions(templateHeadings);
         SETTINGS.settings.displayOn(containerEl);

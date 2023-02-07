@@ -20,20 +20,13 @@ if you want to view the source, please visit the github repository of this plugi
 
 const prod = process.argv[2] === 'production';
 const dir = process.env.OUTDIR ? process.env.OUTDIR : 'dest';
-const copyFiles = ['.hotreload', 'manifest.json', 'versions.json'];
 
-if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
-}
-copyFiles.forEach(file => {
-    fs.copyFileSync(file, dir + '/' + file);
-});
-esbuild
+await esbuild
     .build({
         banner: {
             js: banner,
         },
-        entryPoints: ['src/main.ts', 'src/styles.css', 'src/bin/order.bin.ts'],
+        entryPoints: ['src/main.ts', 'src/bin/order.bin.ts'],
         bundle: true,
         // drop: prod ? ['console', 'debugger'] : [],
         external: [
@@ -61,7 +54,7 @@ esbuild
         outdir: dir,
         plugins: [
             watPlugin(),
-            Vue({ isProd: true }),
+            Vue({ isProd: true, postcss: {} }),
             // pluginVue(),
             esbuildSvelte({
                 preprocess: sveltePreprocess(),
@@ -70,3 +63,13 @@ esbuild
         ],
     })
     .catch(() => process.exit(1));
+
+const copyFiles = ['.hotreload', 'manifest.json', 'versions.json'];
+
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+}
+copyFiles.forEach(file => {
+    fs.copyFileSync(file, dir + '/' + file);
+});
+fs.renameSync(dir + '/main.css', dir + '/styles.css');

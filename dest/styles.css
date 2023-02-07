@@ -1,4 +1,45 @@
-/* src/styles.css */
+/* sfc-style:D:\projects\obsidian-manager\src\ui\HelloVue.vue?type=style&index=0 */
+h2 {
+  color: lightcoral;
+  background: yellow;
+}
+#test1 h2 {
+  color: green !important;
+  background-color: blue;
+}
+
+/* fakecss:D:/projects/obsidian-manager/src/ui/components/Icon.esbuild-svelte-fake-css */
+.icon.svelte-1gcidq0 {
+  vertical-align: middle;
+}
+
+/* fakecss:D:/projects/obsidian-manager/src/ui/components/Reminder.esbuild-svelte-fake-css */
+main.svelte-ero3m8 {
+  padding: 1em;
+  margin: 0 auto;
+}
+.reminder-actions.svelte-ero3m8 {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.reminder-file.svelte-ero3m8 {
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.reminder-file.svelte-ero3m8:hover {
+  color: var(--text-normal);
+  text-decoration: underline;
+}
+.later-select.svelte-ero3m8 {
+  font-size: 14px;
+}
+
+/* src/main.scss */
+body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+}
 .book {
   border: 1px solid var(--background-modifier-border);
   padding: 10px;

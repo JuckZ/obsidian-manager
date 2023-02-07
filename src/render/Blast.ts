@@ -90,13 +90,12 @@ function heartBeat(node) {
 function partyMe(cm) {
     const cursorPos = cm.getCursor();
     const pos = cm.coordsAtPos(cursorPos);
-    const node = document.elementFromPoint(pos.left - 5, pos.top + 5) as DynamicSourceType;
+    const node = document.elementFromPoint(pos.left, pos.top) as DynamicSourceType;
     if (effect == '3') {
         party.confetti(node, {
             count: party.variation.range(20, 40),
         });
-    }
-    if (effect == '4') {
+    } else if (effect == '4') {
         heartBeat(node);
     }
 }
@@ -274,7 +273,7 @@ export function toggleShake(targetVal: SettingModel<boolean, boolean>) {
 }
 
 export function toggleBlast(targetEffect: string) {
-    if (powerMode.contains(targetEffect)) {
+    if (Object.keys(powerMode).contains(targetEffect)) {
         effect = targetEffect;
         isActive = true;
         if (!canvas) {
@@ -301,4 +300,10 @@ export function toggleBlast(targetEffect: string) {
     }
 }
 
-export const powerMode = ['1', '2', '3', '4'];
+export const powerMode = {
+    '0': 'No Effect',
+    '1': 'Effect 1',
+    '2': 'Effect 2',
+    '3': 'Effect 3',
+    '4': 'Effect 4',
+};

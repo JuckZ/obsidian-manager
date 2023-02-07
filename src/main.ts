@@ -68,6 +68,7 @@ import {
 import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
 import { onCodeMirrorChange, toggleBlast, toggleShake } from './render/Blast';
+import './main.scss';
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
@@ -175,10 +176,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         console.log(selectDB(this.spaceDBInstance(), 'pomodoro'));
     }
 
-    async test() {
-        console.log(selectDB(this.spaceDBInstance(), 'vault'));
-    }
-
     get snippetPath() {
         return this.app.customCss.getSnippetPath(this.customSnippetPath);
     }
@@ -275,10 +272,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         if (allHeadings.length > 0) {
             // Logger.log(createRepresentationFromHeadings(allHeadings));
         }
-    }
-
-    async addMyTag() {
-        this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
     }
 
     async sayHello() {
@@ -480,9 +473,11 @@ export default class ObsidianManagerPlugin extends Plugin {
                     if (!task) {
                         if (cursorPos) {
                             task = editor.getLine(cursorPos.line);
-                        } else {
-                            task = '默认任务';
                         }
+                    }
+                    task = task.replace('- [ ] ', '').trim();
+                    if (!task) {
+                        task = 'Default task ' + Date.now();
                     }
                     this.startPomodoro(task);
                 });
@@ -582,15 +577,11 @@ export default class ObsidianManagerPlugin extends Plugin {
             initiateDB(this.spaceDBInstance());
         }
         this.app.workspace.onLayoutReady(async () => {
-            console.log(SETTINGS.debugEnable.value);
             if (SETTINGS.debugEnable.value) {
                 monkeyPatchConsole(this);
             }
             this.watchVault();
             this.startPeriodicTask();
-            this.style = document.head.createEl('style', {
-                attr: { id: 'OBSIDIAN_MANAGER_CUSTOM_STYLE_SHEET' },
-            });
         });
     }
 
@@ -773,18 +764,6 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     private setupCommands() {
         this.addCommand({
-            id: 'switch-text-direction',
-            name: 'Switch Text Direction (LTR<>RTL)',
-            callback: () => {
-                this.toggleDocumentDirection();
-                // const eve = (...args: any[]) => {
-                //     Logger.warn(...args);
-                // };
-                // new Example1Modal(this.app).open();
-            },
-        });
-
-        this.addCommand({
             id: 'obsidian-manager-check-in',
             name: 'Habit Check In',
             callback: () => {
@@ -797,14 +776,6 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Remove Habit Check In',
             callback: () => {
                 this.removeHabitCheckIn();
-            },
-        });
-
-        this.addCommand({
-            id: 'Test',
-            name: 'test',
-            editorCallback: (editor: Editor, view: MarkdownView) => {
-                this.test();
             },
         });
 
@@ -831,14 +802,6 @@ export default class ObsidianManagerPlugin extends Plugin {
                 };
 
                 new InsertLinkModal(this.app, selectedText, onSubmit).open();
-            },
-        });
-
-        this.addCommand({
-            id: 'obsidian-manager-addMyTag',
-            name: 'Add MyTag',
-            callback: () => {
-                this.addMyTag();
             },
         });
 
@@ -1004,6 +967,9 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private setupUI() {
+        this.style = document.head.createEl('style', {
+            attr: { id: 'OBSIDIAN_MANAGER_CUSTOM_STYLE_SHEET' },
+        });
         // this.registerEditorExtension(lineNumbers());
         // this.registerEditorExtension(emojiListPlugin);
         toggleBlast(SETTINGS.powerMode.value);
@@ -1011,14 +977,21 @@ export default class ObsidianManagerPlugin extends Plugin {
         toggleCursorEffects(SETTINGS.cursorEffect.value);
         // 状态栏图标
         const obsidianManagerStatusBar = this.addStatusBarItem();
-        // obsidianManagerStatusBar.createEl('span', { text: '🍎' });
-        setIcon(obsidianManagerStatusBar, 'swords');
+        // obsidianManagerStatusBar.createEl('span', { text: '📄:' + this.getDocumentDirection().toUpperCase() });
+        obsidianManagerStatusBar.setText('📄:' + this.getDocumentDirection().toUpperCase());
+        obsidianManagerStatusBar.onClickEvent(evt => {
+            this.toggleDocumentDirection();
+            obsidianManagerStatusBar.setText('📄:' + this.getDocumentDirection().toUpperCase());
+        });
+        // setIcon(obsidianManagerStatusBar, 'swords');
         // 自定义图标
         // addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 设置选项卡
         this.addSettingTab(new ReminderSettingTab(this.app, this, this.pluginDataIO));
         this.registerView(POMODORO_HISTORY_VIEW, leaf => new PomodoroHistoryView(leaf, this));
         this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
+        this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
+        this.addTag(new Tag('blue', 'yellow', 'juckz', { name: '' }, { fontFamily: '' }));
         // 左侧菜单，使用自定义图标
         this.addRibbonIcon('swords', 'Obsidian Manager', event => {
             const menu = new Menu();
@@ -1036,10 +1009,6 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     private watchVault() {
         window.addEventListener(eventTypes.mdbChange, this.mdbChange.bind(this));
-        // TODO partyjs
-        window.onclick = () => {
-            // xx
-        };
         [
             this.app.workspace.on('click', this.clickFunction),
             this.app.workspace.on('resize', this.resizeFunction),

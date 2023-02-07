@@ -14,11 +14,11 @@ export function buildTagRules(tag: Tag) {
         filter: hue-rotate(0) !important;
     }`,
         `body:not(.tag-default) .tag[href^="#${tag.type}"]::after {
-        content: ' ❓';
+        content: ' 🚩';
         font-size: var(--font-size-emoji-after-tag);
     }`,
         `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-tag-${tag.type}:not(.cm-formatting-hashtag)::after {
-        content: ' ❓';
+        content: ' 🚩';
     }`,
         `body:not(.tag-default) .cm-s-obsidian:not([class="markdown-source-view cm-s-obsidian mod-cm6"]) span.cm-hashtag.cm-meta.cm-hashtag-end.cm-tag-${tag.type}:not(.cm-formatting-hashtag) {
         font-family: ${tag.font.fontFamily} !important;

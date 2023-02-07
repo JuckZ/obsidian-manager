@@ -1,11 +1,11 @@
-/*
+$font-stack: Helvetica, sans-serif;
+$primary-color: #333;
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+body {
+  font: 100% $font-stack;
+  color: $primary-color;
+}
 
-If your plugin does not need CSS, delete this file.
-
-*/
 .book {
   border: 1px solid var(--background-modifier-border);
   padding: 10px;

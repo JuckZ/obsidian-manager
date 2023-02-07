@@ -40,21 +40,21 @@ export class PomodoroHistoryView extends ItemView {
         container.createEl('div', {
             cls: 'my-plugin-view',
             attr: {
-                id: 'test1',
+                id: 'obsidian-manager-pomodoro-history-view',
             },
         });
-        this.vueapp = createApp(HelloVue);
-        this.vueapp.mount('.my-plugin-view');
+        this.vueapp = createApp(HelloVue, { age: 'juck', getData: this.getData.bind(this) });
+        // selectDB(this.plugin.spaceDB, 'pomodoro')?.rows
+        this.vueapp.mount('#obsidian-manager-pomodoro-history-view');
+    }
+
+    async getData() {
+        return await selectDB(this.plugin.spaceDB, 'pomodoro')?.rows;
     }
 
     async setContent() {
         const container = this.containerEl.children[1];
         container.empty();
-        container.createEl('h4', { text: 'Pomodoro History View' });
-        console.log(this.plugin.spaceDB);
-        selectDB(this.plugin.spaceDB, 'pomodoro')?.rows.forEach((row: Pomodoro) => {
-            container.createEl('li', { text: row.task });
-        });
     }
 
     async onClose() {
