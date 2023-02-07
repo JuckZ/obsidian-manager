@@ -11,9 +11,20 @@ let shakeTime = 0,
     isActive = false,
     enableShake: SettingModel<boolean, boolean>,
     cmNode,
+    titleBarHeight = 40,
     canvas,
     ctx;
-
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+if (window.app.isMobile) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    titleBarHeight = document.getElementsByClassName('view-header')[5]?.innerHeight || 40;
+} else {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    titleBarHeight = document.getElementsByClassName('titlebar')[0]?.innerHeight || 40;
+}
 const shakeIntensity = 5,
     particles: any[] = [],
     MAX_PARTICLES = 500,
@@ -24,13 +35,8 @@ const shakeIntensity = 5,
         x: [-1, 1],
         y: [-3.5, -1.5],
     },
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    // TODO document.getElementsByClassName('titlebar')[0].innerHeight
-    titleBarHeight = 40,
     w = window.innerWidth,
     h = window.innerHeight - titleBarHeight;
-
 const throttledShake = throttle(shake, 100);
 const throttledSpawnParticles = throttle(spawnParticles, 100);
 const throttledPartyMe = throttle(partyMe, 100);
@@ -81,7 +87,7 @@ function heartBeat(node) {
     });
 }
 
-function partyMe(cm, type) {
+function partyMe(cm) {
     const cursorPos = cm.getCursor();
     const pos = cm.coordsAtPos(cursorPos);
     const node = document.elementFromPoint(pos.left - 5, pos.top + 5) as DynamicSourceType;
@@ -108,14 +114,10 @@ function getRGBComponents(node) {
     }
 }
 
-function spawnParticles(cm, type) {
+function spawnParticles(cm) {
     const cursorPos = cm.getCursor();
     const pos = cm.coordsAtPos(cursorPos);
-    const node = document.elementFromPoint(pos.left - 5, pos.top + 5);
-    type = cm.wordAt(cursorPos);
-    if (type) {
-        type = type.type;
-    }
+    const node = document.elementFromPoint(pos.left, pos.top);
     const numParticles = random(PARTICLE_NUM_RANGE.min, PARTICLE_NUM_RANGE.max);
     const color = getRGBComponents(node);
 
@@ -244,7 +246,7 @@ function loop() {
     if (!lastTime) lastTime = current_time;
     const dt = (current_time - lastTime) / 1000;
     lastTime = current_time;
-    if (enableShake.value && shakeTime > 0) {
+    if (enableShake && enableShake.value && shakeTime > 0) {
         shakeTime -= dt;
         const magnitude = (shakeTime / shakeTimeMax) * shakeIntensity;
         const shakeX = random(-magnitude, magnitude);

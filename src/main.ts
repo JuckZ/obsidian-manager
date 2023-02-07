@@ -582,7 +582,8 @@ export default class ObsidianManagerPlugin extends Plugin {
             initiateDB(this.spaceDBInstance());
         }
         this.app.workspace.onLayoutReady(async () => {
-            if (this.pluginDataIO.debug.value) {
+            console.log(SETTINGS.debugEnable.value);
+            if (SETTINGS.debugEnable.value) {
                 monkeyPatchConsole(this);
             }
             this.watchVault();
@@ -796,14 +797,6 @@ export default class ObsidianManagerPlugin extends Plugin {
             name: 'Remove Habit Check In',
             callback: () => {
                 this.removeHabitCheckIn();
-            },
-        });
-
-        this.addCommand({
-            id: 'toggle-debug',
-            name: 'Toggle debug',
-            callback: () => {
-                toggleDebugEnable();
             },
         });
 

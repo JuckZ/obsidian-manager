@@ -15,7 +15,6 @@ export class PluginDataIO {
     private restoring = true;
     changed = false;
     public scanned: Reference<boolean> = new Reference(false);
-    public debug: Reference<boolean> = new Reference(false);
 
     constructor(private plugin: Plugin_2, private reminders: Reminders) {
         SETTINGS.forEach(setting => {
@@ -39,10 +38,6 @@ export class PluginDataIO {
             return;
         }
         this.scanned.value = data.scanned;
-        if (data.debug != null) {
-            this.debug.value = data.debug;
-        }
-
         const loadedSettings = data.settings;
         SETTINGS.forEach(setting => {
             setting.load(loadedSettings);
@@ -89,7 +84,6 @@ export class PluginDataIO {
         await this.plugin.saveData({
             scanned: this.scanned.value,
             reminders: remindersData,
-            debug: this.debug.value,
             settings,
         });
         this.changed = false;
