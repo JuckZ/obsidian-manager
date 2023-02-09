@@ -38,14 +38,13 @@ import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { ImageOriginModal, InsertLinkModal, PomodoroReminderModal } from 'ui/modal/insert-link-modal';
-import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/PomodoroHistoryView';
-import { POMODORO_VIEW, PomodoroView } from 'ui/PomodoroView';
+import { ImageOriginModal, InsertLinkModal, PomodoroReminderModal } from 'ui/modal/customModals';
+import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/view/PomodoroHistoryView';
 import { codeEmoji } from 'render/Emoji';
 import { toggleCursorEffects } from 'render/CursorEffects';
 import { buildTagRules } from 'render/Tag';
 import { ReminderModal } from 'ui/reminder';
-import Logger, { toggleDebugEnable } from 'utils/logger';
+import Logger, { initLogger } from 'utils/logger';
 import { notify } from 'utils/request';
 import { getAllFiles, getNotePath } from 'utils/file';
 import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, saveDBToPath, selectDB } from 'utils/db/db';
@@ -128,6 +127,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.editDetector = new EditDetector(SETTINGS.editDetectionSec);
         this.remindersController = new RemindersController(app.vault, this.reminders);
         this.reminderModal = new ReminderModal(this.app, SETTINGS.useSystemNotification, SETTINGS.laters);
+        initLogger(SETTINGS.debugEnable);
         this.resizeFunction = this.customizeResize.bind(this);
         this.clickFunction = this.customizeClick.bind(this);
         this.editorMenuFunction = this.customizeEditorMenu.bind(this);
@@ -736,7 +736,6 @@ export default class ObsidianManagerPlugin extends Plugin {
     override async onunload(): Promise<void> {
         toggleBlast('0');
         this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
-        this.app.workspace.detachLeavesOfType(POMODORO_VIEW);
         this.style.detach();
     }
 
@@ -998,12 +997,14 @@ export default class ObsidianManagerPlugin extends Plugin {
         const obsidianManagerPomodoroStatusBar = this.addStatusBarItem();
         obsidianManagerPomodoroStatusBar.createEl('span', { text: '🍅' });
         obsidianManagerPomodoroStatusBar.onClickEvent(async evt => {
-            this.app.workspace.detachLeavesOfType(POMODORO_VIEW);
+            this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
             await this.app.workspace.getRightLeaf(true).setViewState({
-                type: POMODORO_VIEW,
+                type: POMODORO_HISTORY_VIEW,
                 active: true,
             });
-            this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(POMODORO_VIEW)[0] as WorkspaceLeaf);
+            this.app.workspace.revealLeaf(
+                this.app.workspace.getLeavesOfType(POMODORO_HISTORY_VIEW)[0] as WorkspaceLeaf,
+            );
         });
         // setIcon(obsidianManagerDocumentDirectionDirStatusBar, 'swords');
         // 自定义图标
@@ -1011,7 +1012,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         // 设置选项卡
         this.addSettingTab(new ReminderSettingTab(this.app, this, this.pluginDataIO));
         this.registerView(POMODORO_HISTORY_VIEW, leaf => new PomodoroHistoryView(leaf, this));
-        this.registerView(POMODORO_VIEW, leaf => new PomodoroView(leaf, this));
         this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
         this.addTag(new Tag('blue', 'yellow', 'juckz', { name: '' }, { fontFamily: '' }));
         // 左侧菜单，使用自定义图标

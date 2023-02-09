@@ -1,7 +1,7 @@
 import { HoverPopover, ItemView, WorkspaceLeaf } from 'obsidian';
 import { App as VueApp, createApp } from 'vue';
 import type ObsidianManagerPlugin from 'main';
-import Title from './Title';
+import Title from '../Title';
 
 export const POMODORO_VIEW = 'pomodoro-view';
 

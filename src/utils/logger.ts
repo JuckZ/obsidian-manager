@@ -1,12 +1,17 @@
 import { inspect } from 'util';
 import chalk from 'chalk';
+import { ConstantReference, ReadOnlyReference } from 'model/ref';
 
 chalk.level = 3;
-let debugEnable = true;
+let debugEnable: ReadOnlyReference<boolean> = new ConstantReference(false);
 
-// TODO 溯源，显示调用处
+export const initLogger = (debugEnableVal: ReadOnlyReference<boolean>) => {
+    debugEnable = debugEnableVal;
+};
+
+// TODO 单例模式
 const printer = (args, chalkify) => {
-    if (!debugEnable) {
+    if (!debugEnable.value) {
         return;
     }
     if (args.length === 0) throw '::::::error::::: no argument supplied to logger';
@@ -37,12 +42,4 @@ export default class Logger {
     static error(...args: any) {
         printer(args, chalk.bgRedBright.blackBright.bold);
     }
-}
-
-export function toggleDebugEnable() {
-    setDebugEnable(!debugEnable);
-}
-
-export function setDebugEnable(value: boolean) {
-    debugEnable = value;
 }

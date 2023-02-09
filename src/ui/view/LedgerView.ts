@@ -5,7 +5,7 @@ import type { Ledger } from 'schemas/spaces';
 import type ObsidianManagerPlugin from 'main';
 import { eventTypes } from 'types/types';
 import type { DBRows } from 'types/mdb';
-import PomodoroHistory from './PomodoroHistory.vue';
+import PomodoroHistory from '../PomodoroHistory.vue';
 
 export const Ledger_HISTORY_VIEW = 'Ledger-history-view';
 

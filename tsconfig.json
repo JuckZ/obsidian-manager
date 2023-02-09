@@ -12,6 +12,8 @@
     "esModuleInterop": true,
     "target": "ES6",
     "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
     "moduleResolution": "node",
     "declaration": true,
     "sourceMap": true,
