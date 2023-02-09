@@ -1,5 +1,6 @@
 import type { AxiosResponse } from 'axios';
 import { request } from 'utils/request';
+import Logger from '../utils/logger';
 
 export const searchPicture = async (source: string, keyword: string): Promise<string> => {
     const res: AxiosResponse = await new Promise((resolve, reject) => {
@@ -7,7 +8,7 @@ export const searchPicture = async (source: string, keyword: string): Promise<st
             // .get(`https://api.ihave.cool/gen_image/from_keyword?origin=${source}&keyword=${keyword}`)
             .get(`https://api.ihave.cool/gen_image/from_keyword?origin=${source}&keyword=${keyword}`)
             .then(res => {
-                console.log(res);
+                Logger.log(res);
                 resolve(res);
             })
             .catch(error => reject(error));

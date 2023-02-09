@@ -1,5 +1,6 @@
 import { MarkdownDocument, ReminderEdit, modifyReminder, parseReminder } from 'model/format';
 import type { Reminder } from 'model/reminder';
+import Logger from '../utils/logger';
 import type { Todo } from './format/markdown';
 
 export type ReminderTodoEdit = ReminderEdit & {
@@ -42,9 +43,9 @@ export class Content {
     private async modifyReminderLine(reminder: Reminder, edit: ReminderTodoEdit) {
         const modified = await modifyReminder(this.doc, reminder, edit);
         if (modified) {
-            console.info('Reminder was updated: reminder=%o', reminder);
+            Logger.info('Reminder was updated: reminder=%o', reminder);
         } else {
-            console.warn("Cannot modify reminder because it's not a reminder todo: reminder=%o", reminder);
+            Logger.warn("Cannot modify reminder because it's not a reminder todo: reminder=%o", reminder);
         }
         return modified;
     }

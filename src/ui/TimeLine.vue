@@ -137,7 +137,7 @@ const getType = (status): 'default' | 'error' | 'info' | 'success' | 'warning' |
 };
 
 onUpdated(() => {
-    // console.log(plugin.value);
+    // Logger.log(plugin.value);
 });
 </script>
 

@@ -1,3 +1,5 @@
+import Logger from '../utils/logger';
+
 interface MContent {
     content: string;
     posNum?: number;
@@ -17,7 +19,7 @@ export async function insertAfterHandler(targetString: string, formatted: string
         //     return await createInsertAfterIfNotFound(formatted);
         // }
 
-        console.log('unable to find insert after line in file.');
+        Logger.log('unable to find insert after line in file.');
     }
 
     const nextHeaderPositionAfterTargetPosition = fileContentLines

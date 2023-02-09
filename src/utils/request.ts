@@ -25,8 +25,8 @@ export const createAxiosByinterceptors = (config?: AxiosRequestConfig): AxiosIns
             return response;
         },
         function (error) {
-            console.error(error);
-            console.error(error?.response?.data?.message || '服务端异常');
+            Logger.error(error);
+            Logger.error(error?.response?.data?.message || '服务端异常');
             return Promise.reject(error);
         },
     );

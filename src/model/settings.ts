@@ -2,6 +2,7 @@ import type { ReadOnlyReference } from 'model/ref';
 import { Reference } from 'model/ref';
 import { Later, Time, parseLaters } from 'model/time';
 import { AbstractTextComponent, Setting } from 'obsidian';
+import Logger from '../utils/logger';
 import { ReminderFormatType, ReminderFormatTypes } from './format';
 
 class SettingRegistry {
@@ -61,7 +62,7 @@ class SettingContext {
 
     private setText(el: HTMLElement, text: string | null) {
         if (!el) {
-            console.error('element not created');
+            Logger.error('element not created');
             return;
         }
         if (text === null) {

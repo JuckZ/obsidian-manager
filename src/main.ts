@@ -145,14 +145,14 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async sqlJS() {
-        // console.time("Loading SQlite");
+        // Logger.time("Loading SQlite");
         const sqljs = await loadSQL();
-        // console.timeEnd("Loading SQlite");
+        // Logger.timeEnd("Loading SQlite");
         return sqljs;
     }
 
     mdbChange(e: any) {
-        console.log(this, e);
+        Logger.log(this, e);
     }
 
     pomodoroChange(e: any) {
@@ -189,7 +189,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
         const evt = new CustomEvent(eventTypes.pomodoroChange);
         window.dispatchEvent(evt);
-        console.log(selectDB(this.spaceDBInstance(), pomodoroDB));
+        Logger.log(selectDB(this.spaceDBInstance(), pomodoroDB));
     }
 
     get snippetPath() {
@@ -442,11 +442,11 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async customizeResize(): Promise<void> {
-        // console.log('resize');
+        // Logger.log('resize');
     }
 
     async customizeClick(evt: MouseEvent): Promise<void> {
-        console.log('customizeClick');
+        Logger.log('customizeClick');
     }
 
     async customizeEditorMenu(menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
@@ -647,7 +647,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.registerInterval(
             window.setInterval(() => {
                 if (intervalTaskRunning) {
-                    console.log('Skip reminder interval task because task is already running.');
+                    Logger.log('Skip reminder interval task because task is already running.');
                     return;
                 }
                 intervalTaskRunning = true;
@@ -690,7 +690,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                     }
                 }
                 this.showReminder(reminder);
-                console.log(reminder);
+                Logger.log(reminder);
                 previousReminder = reminder;
             }
         }
@@ -710,25 +710,25 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.reminderModal.show(
             reminder,
             time => {
-                console.info('Remind me later: time=%o', time);
+                Logger.info('Remind me later: time=%o', time);
                 reminder.time = time;
                 reminder.muteNotification = false;
                 this.remindersController.updateReminder(reminder, false);
                 this.pluginDataIO.save(true);
             },
             () => {
-                console.info('done');
+                Logger.info('done');
                 reminder.muteNotification = false;
                 this.remindersController.updateReminder(reminder, true);
                 this.reminders.removeReminder(reminder);
                 this.pluginDataIO.save(true);
             },
             () => {
-                console.info('Mute');
+                Logger.info('Mute');
                 reminder.muteNotification = true;
             },
             () => {
-                console.info('Open');
+                Logger.info('Open');
                 this.openReminderFile(reminder);
             },
         );

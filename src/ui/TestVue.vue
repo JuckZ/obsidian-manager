@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-console.log('hererer');
+//
 </script>

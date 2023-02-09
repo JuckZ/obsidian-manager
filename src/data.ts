@@ -67,7 +67,7 @@ export class PluginDataIO {
         if (!force && !this.changed) {
             return;
         }
-        console.debug('Save reminder plugin data: force=%s, changed=%s', force, this.changed);
+        Logger.debug('Save reminder plugin data: force=%s, changed=%s', force, this.changed);
         const remindersData: any = {};
         this.reminders.fileToReminders.forEach((r, filePath) => {
             remindersData[filePath] = r.map(rr => ({

@@ -26,20 +26,30 @@ const printer = (args, chalkify) => {
     });
 };
 
-export default class Logger {
-    static log(...args: any) {
+class Logger {
+    log(...args: any) {
         printer(args, chalk.bgCyanBright.blackBright.bold);
     }
-    static dir(...args: any) {
+    dir(...args: any) {
         printer(args, chalk.bgBlueBright.blackBright.bold);
     }
-    static info(...args: any) {
+    info(...args: any) {
         printer(args, chalk.bgBlueBright.blackBright.bold);
     }
-    static warn(...args: any) {
+    warn(...args: any) {
         printer(args, chalk.bgYellowBright.blackBright.bold);
     }
-    static error(...args: any) {
+    error(...args: any) {
+        printer(args, chalk.bgRedBright.blackBright.bold);
+    }
+    debug(...args: any[]) {
         printer(args, chalk.bgRedBright.blackBright.bold);
     }
 }
+
+// TODO 合理优化
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const LoggerUtil = new Proxy(new Logger(), console);
+
+export default LoggerUtil;

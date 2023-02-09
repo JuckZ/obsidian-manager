@@ -27,7 +27,7 @@ class EmojiListPlugin implements PluginValue {
     }
 
     destroy() {
-        // console.log('destroy====');
+        // Logger.log('destroy====');
     }
 
     buildDecorations(view: EditorView): DecorationSet {

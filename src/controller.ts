@@ -2,15 +2,16 @@ import { MarkdownView, TAbstractFile, TFile, Vault, WorkspaceLeaf } from 'obsidi
 
 import { Content } from 'model/content';
 import type { Reminder, Reminders } from 'model/reminder';
+import Logger from './utils/logger';
 
 export class RemindersController {
     constructor(private vault: Vault, private reminders: Reminders) {}
 
     async openReminder(reminder: Reminder, leaf: WorkspaceLeaf) {
-        console.log('Open reminder: ', reminder);
+        Logger.log('Open reminder: ', reminder);
         const file = this.vault.getAbstractFileByPath(reminder.file);
         if (!(file instanceof TFile)) {
-            console.error("Cannot open file because it isn't a TFile: %o", file);
+            Logger.error("Cannot open file because it isn't a TFile: %o", file);
             return;
         }
 
@@ -35,7 +36,7 @@ export class RemindersController {
     async updateReminder(reminder: Reminder, checked: boolean) {
         const file = this.vault.getAbstractFileByPath(reminder.file);
         if (!(file instanceof TFile)) {
-            console.error('file is not instance of TFile: %o', file);
+            Logger.error('file is not instance of TFile: %o', file);
             return;
         }
         const content = new Content(file.path, await this.vault.read(file));
@@ -47,7 +48,7 @@ export class RemindersController {
     }
 
     async reloadAllFiles() {
-        console.debug('Reload all files and collect reminders');
+        Logger.debug('Reload all files and collect reminders');
         this.reminders.clear();
         for (const file of this.vault.getMarkdownFiles()) {
             await this.reloadFile(file, false);
@@ -55,20 +56,20 @@ export class RemindersController {
     }
 
     async removeFile(path: string): Promise<boolean> {
-        console.debug('Remove file: path=%s', path);
+        Logger.debug('Remove file: path=%s', path);
         const result = this.reminders.removeFile(path);
         // this.reloadUI();
         return result;
     }
 
     async reloadFile(file: TAbstractFile, reloadUI = false) {
-        console.debug('Reload file and collect reminders: file=%s, forceReloadUI=%s', file.path, reloadUI);
+        Logger.debug('Reload file and collect reminders: file=%s, forceReloadUI=%s', file.path, reloadUI);
         if (!(file instanceof TFile)) {
-            console.debug('Cannot read file other than TFile: file=%o', file);
+            Logger.debug('Cannot read file other than TFile: file=%o', file);
             return false;
         }
         if (!this.isMarkdownFile(file)) {
-            console.debug('Not a markdown file: file=%o', file);
+            Logger.debug('Not a markdown file: file=%o', file);
             return false;
         }
         const content = new Content(file.path, await this.vault.cachedRead(file));

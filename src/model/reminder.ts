@@ -1,5 +1,6 @@
 import type { ReadOnlyReference } from 'model/ref';
 import { DateTime, Time } from 'model/time';
+import Logger from '../utils/logger';
 
 export class Reminder {
     // To avoid duplicate notification, set this flag true before notification and set false on notification done.
@@ -72,7 +73,7 @@ export class Reminders {
     }
 
     public removeReminder(reminder: Reminder) {
-        console.debug('Remove reminder: %o', reminder);
+        Logger.debug('Remove reminder: %o', reminder);
         this.reminders.remove(reminder);
         const file = this.fileToReminders.get(reminder.file);
         if (file) {
@@ -228,8 +229,8 @@ export function groupReminders(sortedReminders: Array<Reminder>, reminderTime: T
         const overdueGroup: Group = new Group('Overdue', time => time.format('HH:mm', reminderTime));
         overdueGroup.isOverdue = true;
         result.splice(0, 0, new GroupedReminder(overdueGroup, overdueReminders));
-        console.log(overdueGroup);
-        console.log(result);
+        Logger.log(overdueGroup);
+        Logger.log(result);
     }
     return result;
 }
