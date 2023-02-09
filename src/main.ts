@@ -23,14 +23,7 @@ import {
 import moment from 'moment';
 import type { ExtApp, ExtTFile } from 'types';
 import { EditDetector, OneDay, Tag, UndoHistoryInstance } from 'types';
-import {
-    FocusPortalEvent,
-    LoadPortalEvent,
-    OpenFilePortalEvent,
-    SpawnPortalEvent,
-    VaultChange,
-    eventTypes,
-} from 'types/types';
+import { eventTypes } from 'types/types';
 import { getAllDailyNotes, getDailyNote, getDailyNoteSettings } from 'obsidian-daily-notes-interface';
 import { RemindersController } from 'controller';
 import { PluginDataIO } from 'data';
@@ -38,7 +31,7 @@ import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { ImageOriginModal, InsertLinkModal, PomodoroReminderModal } from 'ui/modal/customModals';
+import { ImageOriginModal, InsertLinkModal } from 'ui/modal/customModals';
 import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/view/PomodoroHistoryView';
 import { codeEmoji } from 'render/Emoji';
 import { toggleCursorEffects } from 'render/CursorEffects';
@@ -47,34 +40,32 @@ import { ReminderModal } from 'ui/reminder';
 import Logger, { initLogger } from 'utils/logger';
 import { notify } from 'utils/request';
 import { getAllFiles, getNotePath } from 'utils/file';
-import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, saveDBToPath, selectDB } from 'utils/db/db';
+import { getTagsFromTask, getTaskContentFromTask } from 'utils/common';
+import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, selectDB } from 'utils/db/db';
 import { insertAfterHandler, setBanner } from 'utils/content';
+import { getEditorPositionFromIndex } from 'utils/editor';
 import { searchPicture } from 'utils/genBanner';
 import { loadSQL } from 'utils/db/sqljs';
 import { initiateDB } from 'utils/promotodo';
 import type { Database } from 'sql.js';
-import { MAX_TIME_SINCE_CREATION, checkInDefaultPath, checkInList } from 'utils/constants';
 import {
-    Decoration,
-    DecorationSet,
-    EditorView,
-    PluginSpec,
-    PluginValue,
-    ViewPlugin,
-    ViewUpdate,
-    WidgetType,
-    lineNumbers,
-} from '@codemirror/view';
+    MAX_TIME_SINCE_CREATION,
+    checkInDefaultPath,
+    checkInList,
+    customSnippetPath,
+    pomodoroDB,
+} from 'utils/constants';
+import type { EditorState } from '@codemirror/state';
+import { lineNumbers } from '@codemirror/view';
 import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
 import { onCodeMirrorChange, toggleBlast, toggleShake } from './render/Blast';
-import './main.scss';
 import { pomodoroSchema } from './schemas/spaces';
+import './main.scss';
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
     pluginDataIO: PluginDataIO;
-    public SETTINGS_PATH = '.obsidian/rtl.json';
     public docDirSettings = new DocumentDirectionSettings();
     private currentFile: TFile;
     private undoHistory: any[];
@@ -106,7 +97,6 @@ export default class ObsidianManagerPlugin extends Plugin {
     vaultRenameFunction: (file: TAbstractFile, oldPath: string) => any;
     vaultClosedFunction: () => any;
 
-    customSnippetPath: string;
     useSnippet = true;
     style: HTMLStyleElement;
     spacesDBPath: string;
@@ -118,7 +108,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.reminders = new Reminders(() => {
             this.pluginDataIO.changed = true;
         });
-        this.customSnippetPath = 'obsidian-manager';
         this.undoHistory = [];
         this.undoHistoryTime = new Date();
         this.pluginDataIO = new PluginDataIO(this, this.reminders);
@@ -127,7 +116,13 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.editDetector = new EditDetector(SETTINGS.editDetectionSec);
         this.remindersController = new RemindersController(app.vault, this.reminders);
         this.reminderModal = new ReminderModal(this.app, SETTINGS.useSystemNotification, SETTINGS.laters);
+        this.bindFunction();
         initLogger(SETTINGS.debugEnable);
+    }
+
+    saveSpacesDB = debounce(() => saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath), 1000, true);
+
+    bindFunction() {
         this.resizeFunction = this.customizeResize.bind(this);
         this.clickFunction = this.customizeClick.bind(this);
         this.editorMenuFunction = this.customizeEditorMenu.bind(this);
@@ -153,8 +148,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         // new PomodoroReminderModal(this.app).open();
     }
 
-    saveSpacesDB = debounce(() => saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath), 1000, true);
-
     spaceDBInstance() {
         return this.spaceDB;
     }
@@ -165,11 +158,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         const content: string = getTaskContentFromTask(task);
         const tagsStr = tags.join(',');
         insertIntoDB(this.spaceDB, {
-            // vault: {
-            //     uniques: ['path'],
-            //     cols: ['path', 'parent', 'created', 'sticker', 'color', 'folder', 'rank'],
-            //     rows: [{ path: new Date().getTime() + 'p' }, { path: new Date().getTime() + 1 + 'p' }],
-            // },
             pomodoro: {
                 uniques: pomodoroSchema.uniques,
                 cols: pomodoroSchema.cols,
@@ -187,15 +175,14 @@ export default class ObsidianManagerPlugin extends Plugin {
                 ],
             },
         });
-        new Notice(`开始执行：${task}`);
         saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
-        const evt = new CustomEvent(eventTypes.pomodoroChange, { detail: { task } });
+        const evt = new CustomEvent(eventTypes.pomodoroChange);
         window.dispatchEvent(evt);
-        console.log(selectDB(this.spaceDBInstance(), 'pomodoro'));
+        console.log(selectDB(this.spaceDBInstance(), pomodoroDB));
     }
 
     get snippetPath() {
-        return this.app.customCss.getSnippetPath(this.customSnippetPath);
+        return this.app.customCss.getSnippetPath(customSnippetPath);
     }
 
     addTag(tag: Tag) {
@@ -236,7 +223,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         } else {
             await this.app.vault.create(this.snippetPath, this.generateCssString());
         }
-        this.app.customCss.setCssEnabledStatus(this.customSnippetPath, true);
+        this.app.customCss.setCssEnabledStatus(customSnippetPath, true);
         this.app.customCss.readSnippets();
     }
 
@@ -443,20 +430,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         }
     }
 
-    public static getEditorPositionFromIndex(content: string, index: number): EditorPosition {
-        const substr = content.substr(0, index);
-
-        let l = 0;
-        let offset = -1;
-        let r = -1;
-        for (; (r = substr.indexOf('\n', r + 1)) !== -1; l++, offset = r);
-        offset += 1;
-
-        const ch = content.substr(offset, index - offset).length;
-
-        return { line: l, ch: ch };
-    }
-
     async customizeResize(): Promise<void> {
         // console.log('resize');
     }
@@ -591,7 +564,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                 monkeyPatchConsole(this);
             }
             this.watchVault();
-            this.startPeriodicTask();
+            // this.startPeriodicTask();
         });
     }
 
@@ -851,13 +824,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.setDocumentDirection(newDirection);
         if (this.docDirSettings.rememberPerFile && this.currentFile && this.currentFile.path) {
             this.docDirSettings.fileDirections[this.currentFile.path] = newDirection;
-            this.saveSettings();
         }
-    }
-
-    saveSettings() {
-        const settings = this.docDirSettings.toJson();
-        this.app.vault.adapter.write(this.SETTINGS_PATH, settings);
     }
 
     getDocumentDirection() {
@@ -981,7 +948,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.style = document.head.createEl('style', {
             attr: { id: 'OBSIDIAN_MANAGER_CUSTOM_STYLE_SHEET' },
         });
-        // this.registerEditorExtension(lineNumbers());
+        // this.registerEditorExtension(lineNumbers({ formatNumber: (lineNo: number, state: EditorState) => '' }));
         // this.registerEditorExtension(emojiListPlugin);
         toggleBlast(SETTINGS.powerMode.value);
         toggleShake(SETTINGS.shakeMode);
@@ -1053,11 +1020,4 @@ export default class ObsidianManagerPlugin extends Plugin {
             this.registerEvent(eventRef);
         });
     }
-}
-function getTagsFromTask(task: string): string[] {
-    return task.match(/ #\w*/g)?.map(tag => tag.split(' #')[1]) || [];
-}
-function getTaskContentFromTask(task: string): string {
-    task = task.replace(/[✅🔁⏳📅🔼⏫🔽] .*/u, '');
-    return task.replace(/ #\w*/g, '');
 }

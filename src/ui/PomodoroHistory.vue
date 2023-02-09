@@ -49,6 +49,7 @@ import TimeLine from './TimeLine.vue';
 import Title from './Title';
 import DoughnutChart from './DoughnutChart.vue';
 import LineChart from './LineChart.vue';
+import { pomodoroDB } from '../utils/constants';
 import { selectDB } from '../utils/db/db';
 import type ObsidianManagerPlugin from '../main';
 import { eventTypes } from '../types/types';
@@ -69,7 +70,7 @@ const history: Ref<Pomodoro[]> = ref([]);
 const currentPomodoro: Ref<Pomodoro | null> = ref(null);
 
 const updateData = async (): Promise<void> => {
-    history.value = (await selectDB(plugin.value.spaceDBInstance(), 'pomodoro')?.rows) || [];
+    history.value = (await selectDB(plugin.value.spaceDBInstance(), pomodoroDB)?.rows) || [];
     currentPomodoro.value = history.value.filter(pomodoro => pomodoro.status === 'ing')[0] || null;
     
 };

@@ -64,6 +64,7 @@ import type ObsidianManagerPlugin from '../main';
 import { Pomodoro, pomodoroSchema } from '../schemas/spaces';
 import { eventTypes } from '../types/types';
 import { PomodoroStatus } from '../utils/promotodo';
+import { pomodoroDB } from '../utils/constants';
 const props = defineProps<{
     pomodoroList: Pomodoro[];
     plugin: ObsidianManagerPlugin;
@@ -124,9 +125,9 @@ const handleSelect = (
     }
 };
 const deletePomodoro = (pomodoro: Pomodoro) => {
-    deleteFromDB(plugin.value.spaceDBInstance(), 'pomodoro', `timestamp = ${pomodoro.timestamp}`);
+    deleteFromDB(plugin.value.spaceDBInstance(), pomodoroDB, `timestamp = ${pomodoro.timestamp}`);
     saveDBAndKeepAlive(plugin.value.spaceDBInstance(), plugin.value.spacesDBPath);
-    const evt = new CustomEvent(eventTypes.pomodoroChange, { detail: { pomodoro } });
+    const evt = new CustomEvent(eventTypes.pomodoroChange);
     window.dispatchEvent(evt);
 };
 
@@ -143,7 +144,7 @@ const updatePomodoro = (pomodoro: Pomodoro) => {
         `timestamp = ${pomodoro.timestamp}`,
     );
     saveDBAndKeepAlive(plugin.value.spaceDBInstance(), plugin.value.spacesDBPath);
-    const evt = new CustomEvent(eventTypes.pomodoroChange, { detail: { pomodoro } });
+    const evt = new CustomEvent(eventTypes.pomodoroChange);
     window.dispatchEvent(evt);
 };
 const statusTypeMap = {

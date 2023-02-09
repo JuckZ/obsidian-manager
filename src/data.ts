@@ -32,7 +32,6 @@ export class PluginDataIO {
 
     async load() {
         const data = await this.plugin.loadData();
-        // Logger.error(data)
         if (!data) {
             this.scanned.value = false;
             return;

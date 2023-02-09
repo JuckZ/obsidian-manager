@@ -281,32 +281,33 @@ class Settings {
             .newGroup('Rollover TODOs')
             .addSettings(this.templateHeading, this.deleteOnComplete, this.removeEmptyTodos);
 
-        this.settings
-            .newGroup('Notification Settings')
-            .addSettings(this.reminderTime, this.laters, this.useSystemNotification);
-        this.settings.newGroup('Editor').addSettings(this.autoCompleteTrigger, this.primaryFormat);
-        this.settings
-            .newGroup('Reminder Format - Reminder Plugin')
-            .addSettings(
-                reminderFormatSettings.enableReminderPluginReminderFormat,
-                this.dateFormat,
-                this.dateTimeFormat,
-                this.strictDateFormat,
-                this.linkDatesToDailyNotes,
-            );
-        this.settings
-            .newGroup('Reminder Format - Tasks Plugin')
-            .addSettings(
-                reminderFormatSettings.enableTasksPluginReminderFormat,
-                this.useCustomEmojiForTasksPlugin,
-                this.removeTagsForTasksPlugin,
-            );
-        this.settings
-            .newGroup('Reminder Format - Kanban Plugin')
-            .addSettings(reminderFormatSettings.enableKanbanPluginReminderFormat);
-        this.settings
-            .newGroup('Advanced')
-            .addSettings(this.editDetectionSec, this.reminderCheckIntervalSec, this.debugEnable);
+        // this.settings
+        //     .newGroup('Notification Settings')
+        //     .addSettings(this.reminderTime, this.laters, this.useSystemNotification);
+        // this.settings.newGroup('Editor').addSettings(this.autoCompleteTrigger, this.primaryFormat);
+        // this.settings
+        //     .newGroup('Reminder Format - Reminder Plugin')
+        //     .addSettings(
+        //         reminderFormatSettings.enableReminderPluginReminderFormat,
+        //         this.dateFormat,
+        //         this.dateTimeFormat,
+        //         this.strictDateFormat,
+        //         this.linkDatesToDailyNotes,
+        //     );
+        // this.settings
+        //     .newGroup('Reminder Format - Tasks Plugin')
+        //     .addSettings(
+        //         reminderFormatSettings.enableTasksPluginReminderFormat,
+        //         this.useCustomEmojiForTasksPlugin,
+        //         this.removeTagsForTasksPlugin,
+        //     );
+        // this.settings
+        //     .newGroup('Reminder Format - Kanban Plugin')
+        //     .addSettings(reminderFormatSettings.enableKanbanPluginReminderFormat);
+        // this.settings
+        //     .newGroup('Advanced')
+        //     .addSettings(this.editDetectionSec, this.reminderCheckIntervalSec, this.debugEnable);
+        this.settings.newGroup('Advanced').addSettings(this.debugEnable);
 
         const config = new ReminderFormatConfig();
         config.setParameterFunc(ReminderFormatParameterKey.now, () => DateTime.now());
