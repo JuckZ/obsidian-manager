@@ -275,8 +275,11 @@ class Settings {
 
         this.settings.newGroup('Beautiful Effects').addSettings(this.cursorEffect, this.powerMode, this.shakeMode);
 
-        this.settings.newGroup('Pomodoro').addSettings(this.expectedTime);
+        this.settings.newGroup('Pomodoro(beta feature)').addSettings(this.expectedTime);
 
+        this.settings.newGroup(
+            "!!!The following features are experimental!!! If you really need, recommend  you use uphy's obsidian-reminder and lumoe's obsidian-rollover-daily-todos plugin.",
+        );
         this.settings
             .newGroup('Rollover TODOs')
             .addSettings(this.templateHeading, this.deleteOnComplete, this.removeEmptyTodos);
@@ -307,7 +310,6 @@ class Settings {
         this.settings
             .newGroup('Advanced')
             .addSettings(this.editDetectionSec, this.reminderCheckIntervalSec, this.debugEnable);
-        this.settings.newGroup('Advanced').addSettings(this.debugEnable);
 
         const config = new ReminderFormatConfig();
         config.setParameterFunc(ReminderFormatParameterKey.now, () => DateTime.now());

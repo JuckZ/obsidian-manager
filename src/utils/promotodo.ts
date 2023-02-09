@@ -43,6 +43,9 @@ export class PomodoroStatus {
 
     getRealSpend() {
         const oldSpend = parseInt(this.pomodoro.spend);
+        if (!this.pomodoro.lastactive) {
+            return 0;
+        }
         const lastTime = moment(parseInt(this.pomodoro.lastactive)).valueOf();
         const range = moment().valueOf() - lastTime;
         const spend = oldSpend + range;
