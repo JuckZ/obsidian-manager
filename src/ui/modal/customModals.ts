@@ -1,5 +1,6 @@
 import type ObsidianManagerPlugin from 'main';
 import { App, FuzzySuggestModal, Modal, Notice, Setting, SuggestModal, TAbstractFile } from 'obsidian';
+import type { Pomodoro } from 'schemas/spaces';
 
 interface Book {
     title: string;
@@ -61,7 +62,7 @@ export class ImageOriginModal extends FuzzySuggestModal<ImageOrigin> {
     }
 }
 
-export class PomodoroReminderModal extends SuggestModal<Book> {
+export class BookSuggestModal extends SuggestModal<Book> {
     // Returns all available suggestions.
     getSuggestions(query: string): Book[] {
         return ALL_BOOKS.filter(book => book.title.toLowerCase().includes(query.toLowerCase()));
@@ -78,44 +79,18 @@ export class PomodoroReminderModal extends SuggestModal<Book> {
         new Notice(`Selected ${book.title}`);
     }
 }
-export class InsertLinkModal extends Modal {
-    linkText: string;
-    linkUrl: string;
+export class PomodoroReminderModal extends Modal {
+    pomodoro: Pomodoro;
 
-    onSubmit: (linkText: string, linkUrl: string) => void;
-
-    constructor(app: App, defaultLinkText: string, onSubmit: (linkText: string, linkUrl: string) => void) {
+    constructor(app: App, pomodoro: Pomodoro) {
         super(app);
-        this.linkText = defaultLinkText;
-        this.onSubmit = onSubmit;
+        this.pomodoro = pomodoro;
     }
 
     onOpen() {
         const { contentEl } = this;
 
-        contentEl.createEl('h1', { text: 'Insert link' });
-
-        new Setting(contentEl).setName('Link text').addText(text =>
-            text.setValue(this.linkText).onChange(value => {
-                this.linkText = value;
-            }),
-        );
-
-        new Setting(contentEl).setName('Link URL').addText(text =>
-            text.setValue(this.linkUrl).onChange(value => {
-                this.linkUrl = value;
-            }),
-        );
-
-        new Setting(contentEl).addButton(btn =>
-            btn
-                .setButtonText('Insert')
-                .setCta()
-                .onClick(() => {
-                    this.close();
-                    this.onSubmit(this.linkText, this.linkUrl);
-                }),
-        );
+        contentEl.createEl('h2', { text: '完成：' + this.pomodoro.task });
     }
 
     onClose() {

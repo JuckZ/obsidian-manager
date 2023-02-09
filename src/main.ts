@@ -31,7 +31,7 @@ import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { ImageOriginModal, InsertLinkModal } from 'ui/modal/customModals';
+import { ImageOriginModal, PomodoroReminderModal } from 'ui/modal/customModals';
 import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/view/PomodoroHistoryView';
 import { codeEmoji } from 'render/Emoji';
 import { toggleCursorEffects } from 'render/CursorEffects';
@@ -452,13 +452,13 @@ export default class ObsidianManagerPlugin extends Plugin {
     async customizeEditorMenu(menu: Menu, editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
         menu.addItem(item => {
             item.setTitle('Set Random Banner For Current File')
-                .setIcon('swords')
+                .setIcon('image')
                 .onClick(async => {
                     new ImageOriginModal(this.app, this, this.app.workspace.getActiveFile()).open();
                 });
         });
         menu.addItem(item => {
-            item.setTitle('Start a pomodoro')
+            item.setTitle('Plan a pomodoro')
                 .setIcon('clock')
                 .onClick(async () => {
                     const cursorPos = editor.getCursor();
@@ -516,7 +516,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     async customizeFileMenu(menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf): Promise<void> {
         menu.addItem(item => {
             item.setTitle('Set random banner for this path')
-                .setIcon('swords')
+                .setIcon('image')
                 .onClick(async () => {
                     new ImageOriginModal(this.app, this, file).open();
                 });
@@ -598,8 +598,8 @@ export default class ObsidianManagerPlugin extends Plugin {
                 }
                 const pomodoroStatus = new PomodoroStatus(pomodoro);
                 if (pomodoroStatus.isOutTime()) {
-                    // 结束该任务
-                    // new PomodoroReminderModal(this.app).open();
+                    // TODO 弹窗，响铃，结束该任务
+                    new PomodoroReminderModal(this.app, pomodoro).open();
                     const changed = pomodoroStatus.changeState('done');
                     if (changed) {
                         this.updatePomodoro(pomodoro);
@@ -835,25 +835,10 @@ export default class ObsidianManagerPlugin extends Plugin {
             id: 'demo show',
             name: 'demo show',
             hotkeys: [{ modifiers: ['Mod', 'Shift'], key: 't' }],
-            editorCallback: (editor: Editor, view: MarkdownView) => {
-                this.sayHello();
-            },
-        });
-
-        this.addCommand({
-            id: 'insert-link',
-            name: 'Insert link',
             // 带条件的编辑器指令
             // editorCheckCallback: (checking: boolean, editor: Editor, view: MarkdownView) => {}
-            // 编辑器指令
-            editorCallback: (editor: Editor) => {
-                const selectedText = editor.getSelection();
-
-                const onSubmit = (text: string, url: string) => {
-                    editor.replaceSelection(`[${text}](${url})`);
-                };
-
-                new InsertLinkModal(this.app, selectedText, onSubmit).open();
+            editorCallback: (editor: Editor, view: MarkdownView) => {
+                this.sayHello();
             },
         });
 
@@ -1050,12 +1035,12 @@ export default class ObsidianManagerPlugin extends Plugin {
         this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
         this.addTag(new Tag('blue', 'yellow', 'juckz', { name: '' }, { fontFamily: '' }));
         // 左侧菜单，使用自定义图标
-        this.addRibbonIcon('swords', 'Obsidian Manager', event => {
+        this.addRibbonIcon('settings-2', 'Obsidian Manager', event => {
             const menu = new Menu();
             menu.addItem(item =>
                 item
                     .setTitle('Show pomodoro history')
-                    .setIcon('activity')
+                    .setIcon('alarm-clock')
                     .onClick(async () => {
                         this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
                         await this.app.workspace.getLeaf(true).setViewState({
