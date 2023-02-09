@@ -60,3 +60,22 @@ export const checkInList = [
         time: '23:00',
     },
 ];
+export const colorSchema = [
+    { fg: '#293845', bg: '#61c0bf' },
+    { fg: '#293845', bg: '#bbded6' },
+    { fg: '#293845', bg: '#fae3d9' },
+    { fg: '#293845', bg: '#ffb6b9' },
+    { fg: '#293845', bg: '#ffaaa5' },
+    { fg: '#293845', bg: '#ffd3b6' },
+    { fg: '#293845', bg: '#dcedc1' },
+    { fg: '#293845', bg: '#a8e6cf' },
+];
+
+export const getTheDay = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const date = now.getDate();
+    const theDay = `${year}-${month.toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`;
+    return theDay;
+};

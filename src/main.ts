@@ -38,8 +38,9 @@ import { Reminder, Reminders } from 'model/reminder';
 import { ReminderSettingTab, SETTINGS } from 'settings';
 import { DATE_TIME_FORMATTER } from 'model/time';
 import { monkeyPatchConsole } from 'obsidian-hack/obsidian-debug-mobile';
-import { Example2Modal, ImageOriginModal, InsertLinkModal } from 'ui/modal/insert-link-modal';
+import { ImageOriginModal, InsertLinkModal, PomodoroReminderModal } from 'ui/modal/insert-link-modal';
 import { POMODORO_HISTORY_VIEW, PomodoroHistoryView } from 'ui/PomodoroHistoryView';
+import { POMODORO_VIEW, PomodoroView } from 'ui/PomodoroView';
 import { codeEmoji } from 'render/Emoji';
 import { toggleCursorEffects } from 'render/CursorEffects';
 import { buildTagRules } from 'render/Tag';
@@ -69,6 +70,7 @@ import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
 import { onCodeMirrorChange, toggleBlast, toggleShake } from './render/Blast';
 import './main.scss';
+import { pomodoroSchema } from './schemas/spaces';
 
 export default class ObsidianManagerPlugin extends Plugin {
     override app: ExtApp;
@@ -147,6 +149,8 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     mdbChange(e: any) {
         console.log(this, e);
+        // addEventListener(eventTypes.pomodoroChange, updateData);
+        // new PomodoroReminderModal(this.app).open();
     }
 
     saveSpacesDB = debounce(() => saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath), 1000, true);
@@ -156,7 +160,10 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async startPomodoro(task: string) {
-        const start = moment().format('YYYY-MM-DD HH:mm:ss');
+        const createTime = moment().format('YYYY-MM-DD HH:mm:ss');
+        const tags: string[] = getTagsFromTask(task);
+        const content: string = getTaskContentFromTask(task);
+        const tagsStr = tags.join(',');
         insertIntoDB(this.spaceDB, {
             // vault: {
             //     uniques: ['path'],
@@ -164,14 +171,25 @@ export default class ObsidianManagerPlugin extends Plugin {
             //     rows: [{ path: new Date().getTime() + 'p' }, { path: new Date().getTime() + 1 + 'p' }],
             // },
             pomodoro: {
-                uniques: ['timestamp'],
-                cols: ['timestamp', 'task', 'start', 'end', 'spend', 'status'],
-                rows: [{ timestamp: new Date().getTime() + '', task, start, status: 'ing' }],
+                uniques: pomodoroSchema.uniques,
+                cols: pomodoroSchema.cols,
+                rows: [
+                    {
+                        timestamp: new Date().getTime() + '',
+                        task: content,
+                        createTime,
+                        spend: '0',
+                        breaknum: '0',
+                        expectedTime: SETTINGS.expectedTime.value.toString(),
+                        status: 'todo',
+                        tags: tagsStr,
+                    },
+                ],
             },
         });
         new Notice(`开始执行：${task}`);
         saveDBAndKeepAlive(this.spaceDB, this.spacesDBPath);
-        const evt = new CustomEvent(eventTypes.pomodoroChange, { detail: { task, start } });
+        const evt = new CustomEvent(eventTypes.pomodoroChange, { detail: { task } });
         window.dispatchEvent(evt);
         console.log(selectDB(this.spaceDBInstance(), 'pomodoro'));
     }
@@ -425,15 +443,6 @@ export default class ObsidianManagerPlugin extends Plugin {
         }
     }
 
-    async activateView() {
-        this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
-        await this.app.workspace.getRightLeaf(false).setViewState({
-            type: POMODORO_HISTORY_VIEW,
-            active: true,
-        });
-        this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(POMODORO_HISTORY_VIEW)[0] as WorkspaceLeaf);
-    }
-
     public static getEditorPositionFromIndex(content: string, index: number): EditorPosition {
         const substr = content.substr(0, index);
 
@@ -449,7 +458,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     async customizeResize(): Promise<void> {
-        console.log('resize');
+        // console.log('resize');
     }
 
     async customizeClick(evt: MouseEvent): Promise<void> {
@@ -475,6 +484,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                             task = editor.getLine(cursorPos.line);
                         }
                     }
+                    task = task.replace('- [x] ', '');
                     task = task.replace('- [ ] ', '').trim();
                     if (!task) {
                         task = 'Default task ' + Date.now();
@@ -726,12 +736,14 @@ export default class ObsidianManagerPlugin extends Plugin {
     override async onunload(): Promise<void> {
         toggleBlast('0');
         this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
+        this.app.workspace.detachLeavesOfType(POMODORO_VIEW);
         this.style.detach();
     }
 
     async setRandomBanner(path: TAbstractFile | null, origin: string): Promise<void> {
         // const ignorePath = ['Journal', 'Reading', 'MyObsidian', 'Archive'];
         const ignorePath = [];
+        // FIXME 找到并使用更高性能api this.app.vault.getMarkdownFiles();
         const allFilePathNeededHandle: TFile[] = await getAllFiles(path, ignorePath, 'md', []);
         // allFilePathNeededHandle = allFilePathNeededHandle.filter(file => {
         //     const banner =
@@ -976,20 +988,30 @@ export default class ObsidianManagerPlugin extends Plugin {
         toggleShake(SETTINGS.shakeMode);
         toggleCursorEffects(SETTINGS.cursorEffect.value);
         // 状态栏图标
-        const obsidianManagerStatusBar = this.addStatusBarItem();
-        // obsidianManagerStatusBar.createEl('span', { text: '📄:' + this.getDocumentDirection().toUpperCase() });
-        obsidianManagerStatusBar.setText('📄:' + this.getDocumentDirection().toUpperCase());
-        obsidianManagerStatusBar.onClickEvent(evt => {
+        const obsidianManagerDocumentDirectionDirStatusBar = this.addStatusBarItem();
+        obsidianManagerDocumentDirectionDirStatusBar.setText('📄:' + this.getDocumentDirection().toUpperCase());
+        obsidianManagerDocumentDirectionDirStatusBar.onClickEvent(evt => {
             this.toggleDocumentDirection();
-            obsidianManagerStatusBar.setText('📄:' + this.getDocumentDirection().toUpperCase());
+            obsidianManagerDocumentDirectionDirStatusBar.setText('📄:' + this.getDocumentDirection().toUpperCase());
         });
-        // setIcon(obsidianManagerStatusBar, 'swords');
+
+        const obsidianManagerPomodoroStatusBar = this.addStatusBarItem();
+        obsidianManagerPomodoroStatusBar.createEl('span', { text: '🍅' });
+        obsidianManagerPomodoroStatusBar.onClickEvent(async evt => {
+            this.app.workspace.detachLeavesOfType(POMODORO_VIEW);
+            await this.app.workspace.getRightLeaf(true).setViewState({
+                type: POMODORO_VIEW,
+                active: true,
+            });
+            this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(POMODORO_VIEW)[0] as WorkspaceLeaf);
+        });
+        // setIcon(obsidianManagerDocumentDirectionDirStatusBar, 'swords');
         // 自定义图标
         // addIcon('circle', '<circle cx="50" cy="50" r="50" fill="currentColor" />');
         // 设置选项卡
         this.addSettingTab(new ReminderSettingTab(this.app, this, this.pluginDataIO));
         this.registerView(POMODORO_HISTORY_VIEW, leaf => new PomodoroHistoryView(leaf, this));
-        this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
+        this.registerView(POMODORO_VIEW, leaf => new PomodoroView(leaf, this));
         this.addTag(new Tag('yellow', 'blue', 'juck', { name: '' }, { fontFamily: '' }));
         this.addTag(new Tag('blue', 'yellow', 'juckz', { name: '' }, { fontFamily: '' }));
         // 左侧菜单，使用自定义图标
@@ -997,10 +1019,17 @@ export default class ObsidianManagerPlugin extends Plugin {
             const menu = new Menu();
             menu.addItem(item =>
                 item
-                    .setTitle('Activate view')
+                    .setTitle('Show pomodoro history')
                     .setIcon('activity')
-                    .onClick(() => {
-                        this.activateView();
+                    .onClick(async () => {
+                        this.app.workspace.detachLeavesOfType(POMODORO_HISTORY_VIEW);
+                        await this.app.workspace.getLeaf(true).setViewState({
+                            type: POMODORO_HISTORY_VIEW,
+                            active: true,
+                        });
+                        this.app.workspace.revealLeaf(
+                            this.app.workspace.getLeavesOfType(POMODORO_HISTORY_VIEW)[0] as WorkspaceLeaf,
+                        );
                     }),
             );
             menu.showAtMouseEvent(event);
@@ -1024,4 +1053,11 @@ export default class ObsidianManagerPlugin extends Plugin {
             this.registerEvent(eventRef);
         });
     }
+}
+function getTagsFromTask(task: string): string[] {
+    return task.match(/ #\w*/g)?.map(tag => tag.split(' #')[1]) || [];
+}
+function getTaskContentFromTask(task: string): string {
+    task = task.replace(/[✅🔁⏳📅🔼⏫🔽] .*/u, '');
+    return task.replace(/ #\w*/g, '');
 }

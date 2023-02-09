@@ -1,10 +1,7 @@
 import { HoverPopover, ItemView, WorkspaceLeaf } from 'obsidian';
 import { App as VueApp, createApp } from 'vue';
-import { selectDB } from 'utils/db/db';
-import type { Pomodoro } from 'schemas/spaces';
 import type ObsidianManagerPlugin from 'main';
-import { eventTypes } from 'types/types';
-import HelloVue from './HelloVue.vue';
+import PomodoroHistory from './PomodoroHistory.vue';
 
 export const POMODORO_HISTORY_VIEW = 'pomodoro-history-view';
 
@@ -32,29 +29,23 @@ export class PomodoroHistoryView extends ItemView {
     }
 
     async onOpen(): Promise<void> {
-        // window.addEventListener(eventTypes.pomodoroChange, this.setContent.bind(this));
-        // this.setContent();
-
         const container = this.containerEl.children[1];
         container.empty();
-        container.createEl('div', {
-            cls: 'my-plugin-view',
-            attr: {
-                id: 'obsidian-manager-pomodoro-history-view',
+        container.createEl(
+            'div',
+            {
+                cls: 'my-plugin-view',
+                attr: {
+                    id: 'obsidian-manager-pomodoro-history-view',
+                },
             },
-        });
-        this.vueapp = createApp(HelloVue, { age: 'juck', getData: this.getData.bind(this) });
-        // selectDB(this.plugin.spaceDB, 'pomodoro')?.rows
-        this.vueapp.mount('#obsidian-manager-pomodoro-history-view');
-    }
-
-    async getData() {
-        return await selectDB(this.plugin.spaceDB, 'pomodoro')?.rows;
-    }
-
-    async setContent() {
-        const container = this.containerEl.children[1];
-        container.empty();
+            el => {
+                this.vueapp = createApp(PomodoroHistory, {
+                    plugin: this.plugin,
+                });
+                this.vueapp.mount(el);
+            },
+        );
     }
 
     async onClose() {

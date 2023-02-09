@@ -80,6 +80,7 @@ export const updateDBConditionally = (db: Database, tables: DBTables, condition:
         .join('; ');
     // Run the query without returning anything
     try {
+        console.log(sqlstr);
         db.exec(sqlstr);
     } catch (e) {
         console.log(e);

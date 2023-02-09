@@ -5,18 +5,23 @@ module.exports = {
         browser: true,
     },
     extends: [
-        'plugin:prettier/recommended',
+        'plugin:vue/base',
         'eslint:recommended',
-        'plugin:@typescript-eslint/eslint-recommended',
+        'plugin:vue/vue3-recommended',
+        'plugin:vue/essential',
         'plugin:@typescript-eslint/recommended',
+        'plugin:prettier/recommended',
+        'eslint-config-prettier',
+        'plugin:@typescript-eslint/eslint-recommended',
         'plugin:import/typescript',
     ],
     globals: {
         Atomics: 'readonly',
         SharedArrayBuffer: 'readonly',
     },
-    parser: '@typescript-eslint/parser',
+    parser: 'vue-eslint-parser',
     parserOptions: {
+        parser: '@typescript-eslint/parser',
         ecmaVersion: 6,
         sourceType: 'module',
         ecmaFeatures: {

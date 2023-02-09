@@ -29,9 +29,24 @@ export type SpaceItem = {
 export type Pomodoro = {
     timestamp: string;
     task: string;
+    createTime: string;
     start: string;
+    lastactive: string;
+    breaknum: string;
     end?: string;
+    expectedTime: string;
     spend: string;
+    status: 'ing' | 'done' | 'todo' | 'cancelled' | 'break';
+    tags?: 'important' | 'inprogress' | 'p1' | 'p2' | 'p3' | 'p4' | string;
+};
+
+export type Ledger = {
+    timestamp: string;
+    ledger: string;
+    start: string;
+    from?: string;
+    spend: string;
+    to: string;
     status?: string;
 };
 
@@ -63,6 +78,18 @@ export const spaceItemsSchema: DBTable = {
  */
 export const pomodoroSchema: DBTable = {
     uniques: ['timestamp'],
-    cols: ['timestamp', 'task', 'start', 'end', 'spend', 'status'],
+    cols: [
+        'timestamp',
+        'task',
+        'createTime',
+        'start',
+        'expectedTime',
+        'lastactive',
+        'breaknum',
+        'end',
+        'spend',
+        'status',
+        'tags',
+    ],
     rows: [],
 };

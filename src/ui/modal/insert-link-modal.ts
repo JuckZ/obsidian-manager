@@ -61,7 +61,7 @@ export class ImageOriginModal extends FuzzySuggestModal<ImageOrigin> {
     }
 }
 
-export class Example2Modal extends SuggestModal<Book> {
+export class PomodoroReminderModal extends SuggestModal<Book> {
     // Returns all available suggestions.
     getSuggestions(query: string): Book[] {
         return ALL_BOOKS.filter(book => book.title.toLowerCase().includes(query.toLowerCase()));

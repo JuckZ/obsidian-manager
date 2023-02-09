@@ -46,6 +46,7 @@ class Settings {
     deleteOnComplete: SettingModel<boolean, boolean>;
     removeEmptyTodos: SettingModel<boolean, boolean>;
     debugEnable: SettingModel<boolean, boolean>;
+    expectedTime: SettingModel<number, number>;
 
     constructor() {
         const reminderFormatSettings = new ReminderFormatSettings(this.settings);
@@ -87,6 +88,14 @@ class Settings {
             .name('Shake Mode')
             .desc('Enable editor shake mode?')
             .toggle(false)
+            .build(new RawSerde());
+
+        this.expectedTime = this.settings
+            .newSettingBuilder()
+            .key('expectedTime')
+            .name('Expected Time')
+            .desc('How many minutes do you want to set for a pomodoro?')
+            .number(25)
             .build(new RawSerde());
 
         this.reminderTime = this.settings
@@ -265,6 +274,8 @@ class Settings {
             .build(new RawSerde());
 
         this.settings.newGroup('Beautiful Effects').addSettings(this.cursorEffect, this.powerMode, this.shakeMode);
+
+        this.settings.newGroup('Pomodoro').addSettings(this.expectedTime);
 
         this.settings
             .newGroup('Rollover TODOs')
