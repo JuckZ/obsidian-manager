@@ -41,12 +41,20 @@ import Logger, { initLogger } from 'utils/logger';
 import { notify } from 'utils/request';
 import { getAllFiles, getNotePath } from 'utils/file';
 import { getTagsFromTask, getTaskContentFromTask } from 'utils/common';
-import { dbResultsToDBTables, getDB, insertIntoDB, saveDBAndKeepAlive, selectDB } from 'utils/db/db';
+import {
+    dbResultsToDBTables,
+    deleteFromDB,
+    getDB,
+    insertIntoDB,
+    saveDBAndKeepAlive,
+    selectDB,
+    updateDBConditionally,
+} from 'utils/db/db';
 import { insertAfterHandler, setBanner } from 'utils/content';
 import { getEditorPositionFromIndex } from 'utils/editor';
 import { searchPicture } from 'utils/genBanner';
 import { loadSQL } from 'utils/db/sqljs';
-import { initiateDB } from 'utils/promotodo';
+import { PomodoroStatus, initiateDB } from 'utils/promotodo';
 import type { Database } from 'sql.js';
 import {
     MAX_TIME_SINCE_CREATION,
@@ -60,7 +68,7 @@ import { lineNumbers } from '@codemirror/view';
 import { DocumentDirectionSettings } from './render/DocumentDirection';
 import { emojiListPlugin } from './render/EmojiList';
 import { onCodeMirrorChange, toggleBlast, toggleShake } from './render/Blast';
-import { pomodoroSchema } from './schemas/spaces';
+import { Pomodoro, pomodoroSchema } from './schemas/spaces';
 import './main.scss';
 
 export default class ObsidianManagerPlugin extends Plugin {
@@ -74,6 +82,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     private editDetector: EditDetector;
     private reminderModal: ReminderModal;
     private reminders: Reminders;
+    private pomodoroTarget: Pomodoro | null;
     quickPreviewFunction: (file: TFile, data: string) => any;
     resizeFunction: () => any;
     clickFunction: (evt: MouseEvent) => any;
@@ -144,8 +153,10 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     mdbChange(e: any) {
         console.log(this, e);
-        // addEventListener(eventTypes.pomodoroChange, updateData);
-        // new PomodoroReminderModal(this.app).open();
+    }
+
+    pomodoroChange(e: any) {
+        this.refreshPomodoroTarget();
     }
 
     spaceDBInstance() {
@@ -168,7 +179,7 @@ export default class ObsidianManagerPlugin extends Plugin {
                         createTime,
                         spend: '0',
                         breaknum: '0',
-                        expectedTime: SETTINGS.expectedTime.value.toString(),
+                        expectedTime: (SETTINGS.expectedTime.value * 60 * 1000).toString(),
                         status: 'todo',
                         tags: tagsStr,
                     },
@@ -559,13 +570,70 @@ export default class ObsidianManagerPlugin extends Plugin {
         if (tables.length == 0) {
             initiateDB(this.spaceDBInstance());
         }
+        this.refreshPomodoroTarget();
         this.app.workspace.onLayoutReady(async () => {
             if (SETTINGS.debugEnable.value) {
                 monkeyPatchConsole(this);
             }
             this.watchVault();
             // this.startPeriodicTask();
+            this.startPomodoroTask();
         });
+    }
+
+    private async refreshPomodoroTarget() {
+        const pomodoroList = (await selectDB(this.spaceDBInstance(), pomodoroDB)?.rows) || [];
+        this.pomodoroTarget = (pomodoroList.filter(pomodoro => pomodoro.status === 'ing')[0] as Pomodoro) || null;
+    }
+
+    private startPomodoroTask() {
+        // 进来就找到ing任务，如果有，则开始interval任务，倒计时准备弹窗提醒
+        // 监听数据库变化事件，若变化，则刷新监听的任务
+        // this.register
+        this.registerInterval(
+            window.setInterval(() => {
+                const pomodoro = this.pomodoroTarget;
+                if (!pomodoro) {
+                    return;
+                }
+                const pomodoroStatus = new PomodoroStatus(pomodoro);
+                if (pomodoroStatus.isOutTime()) {
+                    // 结束该任务
+                    // new PomodoroReminderModal(this.app).open();
+                    const changed = pomodoroStatus.changeState('done');
+                    if (changed) {
+                        this.updatePomodoro(pomodoro);
+                        this.pomodoroTarget = null;
+                    } else {
+                        Logger.error('更新失败', pomodoro);
+                    }
+                }
+            }, 1 * 1000),
+        );
+    }
+
+    deletePomodoro(pomodoro: Pomodoro) {
+        deleteFromDB(this.spaceDBInstance(), pomodoroDB, `timestamp = ${pomodoro.timestamp}`);
+        saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath);
+        const evt = new CustomEvent(eventTypes.pomodoroChange);
+        window.dispatchEvent(evt);
+    }
+
+    updatePomodoro(pomodoro: Pomodoro) {
+        updateDBConditionally(
+            this.spaceDBInstance(),
+            {
+                pomodoro: {
+                    uniques: pomodoroSchema.uniques,
+                    cols: pomodoroSchema.cols,
+                    rows: [pomodoro],
+                },
+            },
+            `timestamp = ${pomodoro.timestamp}`,
+        );
+        saveDBAndKeepAlive(this.spaceDBInstance(), this.spacesDBPath);
+        const evt = new CustomEvent(eventTypes.pomodoroChange);
+        window.dispatchEvent(evt);
     }
 
     private startPeriodicTask() {
@@ -1004,6 +1072,7 @@ export default class ObsidianManagerPlugin extends Plugin {
     }
 
     private watchVault() {
+        window.addEventListener(eventTypes.pomodoroChange, this.pomodoroChange.bind(this));
         window.addEventListener(eventTypes.mdbChange, this.mdbChange.bind(this));
         [
             this.app.workspace.on('click', this.clickFunction),

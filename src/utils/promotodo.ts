@@ -40,12 +40,20 @@ export class PomodoroStatus {
         this.pomodoro.end = moment().format('YYYY-MM-DD HH:mm:ss');
     }
 
-    setSpend() {
+    getRealSpend() {
         const oldSpend = parseInt(this.pomodoro.spend);
         const lastTime = moment(parseInt(this.pomodoro.lastactive)).valueOf();
         const range = moment().valueOf() - lastTime;
         const spend = oldSpend + range;
-        this.pomodoro.spend = spend.toString();
+        return spend;
+    }
+
+    setSpend() {
+        this.pomodoro.spend = this.getRealSpend().toString();
+    }
+
+    isOutTime() {
+        return this.getRealSpend() >= parseInt(this.pomodoro.expectedTime);
     }
 
     setBreakNum() {

@@ -118,35 +118,13 @@ const handleSelect = (
         }
         const changed = ps.changeState(targetStatus);
         if (changed) {
-            updatePomodoro(pomodoro);
+            plugin.value.updatePomodoro(pomodoro);
         }
     } else {
-        deletePomodoro(pomodoro);
+        plugin.value.deletePomodoro(pomodoro);
     }
 };
-const deletePomodoro = (pomodoro: Pomodoro) => {
-    deleteFromDB(plugin.value.spaceDBInstance(), pomodoroDB, `timestamp = ${pomodoro.timestamp}`);
-    saveDBAndKeepAlive(plugin.value.spaceDBInstance(), plugin.value.spacesDBPath);
-    const evt = new CustomEvent(eventTypes.pomodoroChange);
-    window.dispatchEvent(evt);
-};
 
-const updatePomodoro = (pomodoro: Pomodoro) => {
-    updateDBConditionally(
-        plugin.value.spaceDBInstance(),
-        {
-            pomodoro: {
-                uniques: pomodoroSchema.uniques,
-                cols: pomodoroSchema.cols,
-                rows: [pomodoro],
-            },
-        },
-        `timestamp = ${pomodoro.timestamp}`,
-    );
-    saveDBAndKeepAlive(plugin.value.spaceDBInstance(), plugin.value.spacesDBPath);
-    const evt = new CustomEvent(eventTypes.pomodoroChange);
-    window.dispatchEvent(evt);
-};
 const statusTypeMap = {
     ing: 'info',
     done: 'success',
