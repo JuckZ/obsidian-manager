@@ -8,7 +8,6 @@
                 )"
                 :key="pomodoro.timestamp"
                 :type="getType(pomodoro.status)"
-                :time="pomodoro.start + '~' + pomodoro.end"
             >
                 <template #icon>
                     <n-dropdown
@@ -24,7 +23,8 @@
                 </template>
                 <template #header>
                     <span v-if="pomodoro.start"> {{ moment(pomodoro.start).format('HH:mm') }}</span>
-                    <span v-if="pomodoro.end">~{{ moment(pomodoro.end).format('HH:mm') }}</span>
+                    <span v-if="pomodoro.start && pomodoro.end"> ~ </span>
+                    <span v-if="pomodoro.end">{{ moment(pomodoro.end).format('HH:mm') }}</span>
                     <span>
                         {{ ' ' + pomodoro.task }}
                     </span>
