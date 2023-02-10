@@ -57,11 +57,11 @@ It's not too long now. Just finish reading.🤣
 <details open>
   <summary><h3> 💻 1.1 Preview </h3></summary>
 
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/preview/特效展示.png)](./public/recording/特效展示.mkv)
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/preview/番茄钟示例.png)](./public/recording/番茄钟示例.mkv)
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/preview/切换banner.png)](./public/recording/切换banner.mkv)
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/preview/文档方向.png)](./public/recording/文档方向.mkv)
-  
+[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/特效展示.png)](./public/recording/特效展示.mkv)
+[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/番茄钟示例.png)](./public/recording/番茄钟示例.mkv)
+[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/切换banner.png)](./public/recording/切换banner.mkv)
+[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/文档方向.png)](./public/recording/文档方向.mkv)
+ 
 </details>
 
 <details open>
