@@ -58,16 +58,16 @@ It's not too long now. Just finish reading.🤣
   <summary><h3> 💻 1.1 功能预览 </h3></summary>
 
 <a href="https://www.bilibili.com/video/BV12R4y1q7De/?spm_id_from=333.999.0.0">
-  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/特效展示.png" alt="鼠标、按键特效展示" width="50%">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/特效展示.png" alt="鼠标、按键特效展示" width="49%">
 </a>
 <a href="https://w11ww.bilibili.com/video/BV1284y1H74R/?spm_id_from=333.999.0.0">
-  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/番茄钟示例.png" alt="番茄钟功能展示" width="50%">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/番茄钟示例.png" alt="番茄钟功能展示" width="49%">
 </a>
 <a href="https://www.bilibili.com/video/BV1SM411Y7L9/?spm_id_from=333.999.0.0">
-  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/切换banner.png" alt="文档智能配图功能展示" width="50%">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/切换banner.png" alt="文档智能配图功能展示" width="49%">
 </a>
 <a href="ttps://www.bilibili.com/video/BV1ne4y1P7qf/?spm_id_from=333.999.0.0">
-  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/文档方向.png" alt="文档方向切换功能展示" width="50%">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/文档方向.png" alt="文档方向切换功能展示" width="49%">
 </a>
 
 </details>
