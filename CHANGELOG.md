@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/JuckZ/obsidian-manager/compare/v1.9.0...v1.9.1) (2023-02-10)
+
+
+### Bug Fixes
+
+* 1.rename plugin to follow plugin publish rules. ([30c48b2](https://github.com/JuckZ/obsidian-manager/commit/30c48b21b1f1a8f871c5152716bd8cd120770095))
+
 # [1.9.0](https://github.com/JuckZ/obsidian-manager/compare/v1.8.0...v1.9.0) (2023-02-10)
 
 

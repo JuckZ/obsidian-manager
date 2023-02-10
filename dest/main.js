@@ -10276,7 +10276,7 @@ var eventTypes = {
   vaultChange: "mkmd-vault-change",
   mdbChange: "mkmd-mdb-change",
   spacesChange: "mkmd-spaces-change",
-  pomodoroChange: "obsidian-manager-pomodoro-change",
+  pomodoroChange: "a-obsidian-manager-pomodoro-change",
   updateSections: "mkmd-update-sections",
   settingsChanged: "mkmd-settings-changed",
   spawnPortal: "mkmd-portal-spawn",
@@ -54775,7 +54775,7 @@ var PomodoroHistoryView = class extends import_obsidian8.ItemView {
     container.createEl("div", {
       cls: "my-plugin-view",
       attr: {
-        id: "obsidian-manager-pomodoro-history-view"
+        id: "a-obsidian-manager-pomodoro-history-view"
       }
     }, (el) => {
       this.vueapp = createApp(PomodoroHistory_default2, {
@@ -58310,14 +58310,14 @@ ${todos_today.join("\n")}`;
   }
   setupCommands() {
     this.addCommand({
-      id: "obsidian-manager-check-in",
+      id: "a-obsidian-manager-check-in",
       name: "Habit Check In",
       callback: () => {
         this.habitCheckIn();
       }
     });
     this.addCommand({
-      id: "obsidian-manager-remove-check-in",
+      id: "a-obsidian-manager-remove-check-in",
       name: "Remove Habit Check In",
       callback: () => {
         this.removeHabitCheckIn();
@@ -58332,12 +58332,12 @@ ${todos_today.join("\n")}`;
       }
     });
     this.addCommand({
-      id: "obsidian-manager-rollover",
+      id: "a-obsidian-manager-rollover",
       name: "Rollover Todos Now",
       callback: () => this.rollover(void 0)
     });
     this.addCommand({
-      id: "obsidian-manager-undo",
+      id: "a-obsidian-manager-undo",
       name: "Undo last rollover",
       checkCallback: (checking) => {
         if (this.undoHistory.length > 0) {
