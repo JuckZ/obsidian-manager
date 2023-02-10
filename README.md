@@ -1,5 +1,9 @@
 # Obsidian Manager 插件
 
+## ⚠️ 警告
+
+插件已经迁移至 [awesome-brain-manager](https://github.com/JuckZ/awesome-brain-manager)
+
 <p align="center">
   <img width="300px" src="https://avatars.githubusercontent.com/u/65011256?s=280&v=4">
 </p>

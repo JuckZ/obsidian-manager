@@ -1,5 +1,9 @@
 # Obsidian Manager Plugin
 
+## ⚠️ Waring
+
+This plugin has move to [awesome-brain-manager](https://github.com/JuckZ/awesome-brain-manager)
+
 <p align="center">
   <img width="300px" src="https://avatars.githubusercontent.com/u/65011256?s=280&v=4">
 </p>
