@@ -101,7 +101,7 @@ onMounted(async () => {
         },
     };
     // TODO Bug 通过document.getElementById无法获取元素
-    // Logger.log(document.getElementById('obsidian-manager-pomodoro-history-view'));
+    // Logger.log(document.getElementById('a-obsidian-manager-pomodoro-history-view'));
     chart = new Chart(lineChart.value as unknown as ChartItem, {
         type: 'line',
         options: options,

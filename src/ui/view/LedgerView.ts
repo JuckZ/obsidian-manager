@@ -38,11 +38,11 @@ export class LedgerHistoryView extends ItemView {
         container.createEl('div', {
             cls: 'my-plugin-view',
             attr: {
-                id: 'obsidian-manager-Ledger-history-view',
+                id: 'a-obsidian-manager-Ledger-history-view',
             },
         });
         this.vueapp = createApp(PomodoroHistory, { age: 'juck', getData: this.getData.bind(this) });
-        this.vueapp.mount('#obsidian-manager-Ledger-history-view');
+        this.vueapp.mount('#a-obsidian-manager-Ledger-history-view');
     }
 
     async getData(): Promise<DBRows> {

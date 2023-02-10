@@ -32,11 +32,11 @@ export class PomodoroView extends ItemView {
         container.empty();
         container.createEl('div', {
             attr: {
-                id: 'obsidian-manager-pomodoro-view',
+                id: 'a-obsidian-manager-pomodoro-view',
             },
         });
         this.vueapp = createApp(Title, { plugin: this.plugin });
-        this.vueapp.mount('#obsidian-manager-pomodoro-view');
+        this.vueapp.mount('#a-obsidian-manager-pomodoro-view');
     }
 
     async onClose() {

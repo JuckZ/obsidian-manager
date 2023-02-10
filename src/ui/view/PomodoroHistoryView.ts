@@ -36,7 +36,7 @@ export class PomodoroHistoryView extends ItemView {
             {
                 cls: 'my-plugin-view',
                 attr: {
-                    id: 'obsidian-manager-pomodoro-history-view',
+                    id: 'a-obsidian-manager-pomodoro-history-view',
                 },
             },
             el => {

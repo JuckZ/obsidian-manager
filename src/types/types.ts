@@ -28,7 +28,7 @@ export const eventTypes = {
     vaultChange: 'mkmd-vault-change',
     mdbChange: 'mkmd-mdb-change',
     spacesChange: 'mkmd-spaces-change',
-    pomodoroChange: 'obsidian-manager-pomodoro-change',
+    pomodoroChange: 'a-obsidian-manager-pomodoro-change',
     updateSections: 'mkmd-update-sections',
     settingsChanged: 'mkmd-settings-changed',
     spawnPortal: 'mkmd-portal-spawn',

@@ -816,7 +816,7 @@ export default class ObsidianManagerPlugin extends Plugin {
 
     private setupCommands() {
         this.addCommand({
-            id: 'obsidian-manager-check-in',
+            id: 'a-obsidian-manager-check-in',
             name: 'Habit Check In',
             callback: () => {
                 this.habitCheckIn();
@@ -824,7 +824,7 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
 
         this.addCommand({
-            id: 'obsidian-manager-remove-check-in',
+            id: 'a-obsidian-manager-remove-check-in',
             name: 'Remove Habit Check In',
             callback: () => {
                 this.removeHabitCheckIn();
@@ -843,13 +843,13 @@ export default class ObsidianManagerPlugin extends Plugin {
         });
 
         this.addCommand({
-            id: 'obsidian-manager-rollover',
+            id: 'a-obsidian-manager-rollover',
             name: 'Rollover Todos Now',
             callback: () => this.rollover(undefined),
         });
 
         this.addCommand({
-            id: 'obsidian-manager-undo',
+            id: 'a-obsidian-manager-undo',
             name: 'Undo last rollover',
             // 带条件的指令
             checkCallback: checking => {
