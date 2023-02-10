@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/JuckZ/obsidian-manager/compare/v1.8.0...v1.9.0) (2023-02-10)
+
+
+### Features
+
+* 1.make a release ([a574d06](https://github.com/JuckZ/obsidian-manager/commit/a574d064c07acb4120618ca4a2e25843545d8be8))
+
 # [1.8.0](https://github.com/JuckZ/obsidian-manager/compare/v1.7.0...v1.8.0) (2023-02-10)
 
 
