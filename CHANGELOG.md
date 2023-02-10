@@ -1,3 +1,14 @@
+# [1.8.0](https://github.com/JuckZ/obsidian-manager/compare/v1.7.0...v1.8.0) (2023-02-10)
+
+
+### Features
+
+* 1.almost finish pomodoro feature ([d9d5c94](https://github.com/JuckZ/obsidian-manager/commit/d9d5c941ac74cedb3993cffd58131248e8460be0))
+* 1.change icon ([f9c3bf2](https://github.com/JuckZ/obsidian-manager/commit/f9c3bf28efbf55dd8542ea44793f89eaffc31f93))
+* 1.get title height from real element 2. debug support on other platform ([8af1281](https://github.com/JuckZ/obsidian-manager/commit/8af1281530a5cbecf1bb0080587e7bfaa1f818c1))
+* 1.some text ([06542e8](https://github.com/JuckZ/obsidian-manager/commit/06542e8f6e8b5f6d0d45532f7fd7878dbfc9afcc))
+* 1.support vue style and main.scss fix: 1.switch effect bug 2. addMyTag ([3d0839e](https://github.com/JuckZ/obsidian-manager/commit/3d0839e35a70b05051e3cd48a662401347ec69a9))
+
 # [1.7.0](https://github.com/JuckZ/obsidian-manager/compare/v1.6.0...v1.7.0) (2023-02-06)
 
 
