@@ -38,7 +38,7 @@ It's not too long now. Just finish reading.🤣
 
 [中文文档](./README.md)
 
-[English Doc](./)
+[English Doc](#)
 
 </details>
 
@@ -57,10 +57,18 @@ It's not too long now. Just finish reading.🤣
 <details open>
   <summary><h3> 💻 1.1 Preview </h3></summary>
 
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/特效展示.png)](https://www.bilibili.com/video/BV12R4y1q7De/?spm_id_from=333.999.0.0)
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/番茄钟示例.png)](https://w11ww.bilibili.com/video/BV1284y1H74R/?spm_id_from=333.999.0.0)
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/切换banner.png)](https://www.bilibili.com/video/BV1SM411Y7L9/?spm_id_from=333.999.0.0)
-[![](https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/文档方向.png)](https://www.bilibili.com/video/BV1ne4y1P7qf/?spm_id_from=333.999.0.0)
+<a href="https://www.bilibili.com/video/BV12R4y1q7De/?spm_id_from=333.999.0.0">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/特效展示.png" alt="鼠标、按键特效展示" width="50%">
+</a>
+<a href="https://w11ww.bilibili.com/video/BV1284y1H74R/?spm_id_from=333.999.0.0">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/番茄钟示例.png" alt="番茄钟功能展示" width="50%">
+</a>
+<a href="https://www.bilibili.com/video/BV1SM411Y7L9/?spm_id_from=333.999.0.0">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/切换banner.png" alt="文档智能配图功能展示" width="50%">
+</a>
+<a href="ttps://www.bilibili.com/video/BV1ne4y1P7qf/?spm_id_from=333.999.0.0">
+  <img src="https://raw.githubusercontent.com/JuckZ/obsidian-manager/master/public/recording/preview/文档方向.png" alt="文档方向切换功能展示" width="50%">
+</a>
  
 </details>
 
@@ -143,7 +151,7 @@ It's not too long now. Just finish reading.🤣
 <details open>
   <summary><h2> 🔍 2. How to use </h2></summary>
 
-Now you can learn how to use it by [watching videos](https://github.com/JuckZ/obsidian-manager#--11-%E5%8A%9F%E8%83%BD%E9%A2%84%E8%A7%88-), and if needed, I will provide better documentation in the future.
+Now you can learn how to use it by [watching videos](https://github.com/JuckZ/obsidian-manager/blob/master/README_en.md#--11-preview-), and if needed, I will provide better documentation in the future.
 
 </details>
 
